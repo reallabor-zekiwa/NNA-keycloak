@@ -1,0 +1,41 @@
+/* NNA login theme – matches NNA-webxr app/src/ui/auth-screen.ts (ink #3d3d3d / #222, pills radius 23px). */
+:root {
+  --nna-ink: #3d3d3d; --nna-ink-strong: #222222; --nna-bg: #f2f2f2; --nna-line: rgba(61, 61, 61, 0.3);
+  --pf-v5-global--FontFamily--text: 'Inter', system-ui, -apple-system, sans-serif;
+  --pf-v5-global--FontFamily--heading: 'Space Grotesk', system-ui, sans-serif;
+  --pf-v5-global--primary-color--100: #222222;
+  --pf-v5-global--link--Color: #222222; --pf-v5-global--link--Color--hover: #000;
+}
+html, body, .pf-v5-c-login { background: var(--nna-bg) !important; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: var(--nna-ink); }
+.pf-v5-c-login__container { max-width: 440px; padding: 0 20px; }
+/* the header: "Welcome to" over "NEB Network" (realm displayNameHtml) */
+#kc-header, #kc-header-wrapper, .pf-v5-c-login__header { text-align: center; color: var(--nna-ink-strong); text-transform: none; }
+#kc-header-wrapper { font: 400 38px/1.12 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.01em; padding: 48px 0 20px; }
+#kc-header-wrapper .nna-kicker { display: block; font: 300 18px/1.3 'Space Grotesk', system-ui, sans-serif; color: var(--nna-ink); letter-spacing: 0; }
+/* the card */
+.pf-v5-c-login__main { background: #fff; border-radius: 28px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06); }
+.pf-v5-c-login__main-header { padding-top: 32px; }
+.pf-v5-c-login__main-header .pf-v5-c-title, #kc-page-title { font: 300 17px/1.4 'Inter', system-ui, sans-serif; color: var(--nna-ink); text-align: center; }
+/* inputs: a hairline under the text, like the app */
+.pf-v5-c-form-control { --pf-v5-c-form-control--BorderRadius: 0; background: none; }
+.pf-v5-c-form-control::before { border: 0 !important; }
+.pf-v5-c-form-control::after { border-bottom: 1px solid var(--nna-line) !important; border-width: 0 0 1px !important; }
+.pf-v5-c-form-control > input, .pf-v5-c-form-control > select { font: 400 16px/1.4 'Inter', system-ui, sans-serif; color: var(--nna-ink-strong); padding-left: 2px; }
+.pf-v5-c-form__label-text { font-weight: 400; color: var(--nna-ink); }
+/* buttons: dark pill (primary), outlined pill (Apple, Google, back) */
+.pf-v5-c-button { border-radius: 23px !important; min-height: 46px; font: 500 16px/1 'Inter', system-ui, sans-serif; }
+.pf-v5-c-button.pf-m-primary { background: var(--nna-ink-strong); border: 1px solid var(--nna-ink-strong); color: #fff; }
+.pf-v5-c-button.pf-m-primary:hover { background: #000; }
+.pf-v5-c-button.pf-m-secondary, #kc-social-providers .pf-v5-c-button, #kc-social-providers a {
+  background: transparent !important; color: var(--nna-ink-strong) !important; border: 1px solid var(--nna-ink) !important;
+  border-radius: 23px !important; box-shadow: none !important; }
+.pf-v5-c-button.pf-m-secondary::after { border: 0 !important; }
+#kc-social-providers ul { display: flex; gap: 10px; padding: 0; }
+#kc-social-providers li { flex: 1 1 0; list-style: none; }
+#kc-social-providers .pf-v5-c-login__main-footer-band, .pf-v5-c-login__main-footer-band { background: none; border: 0; }
+/* the "or sign in with" line */
+.kc-social-section-text, #kc-social-providers h2, .pf-v5-c-login__main-footer-links-item { color: var(--nna-ink); font-weight: 300; }
+a, .pf-v5-c-button.pf-m-link { color: var(--nna-ink-strong); text-decoration: underline; text-underline-offset: 2px; }
+/* the language switch: quiet */
+#kc-locale, .pf-v5-c-login__main-header-utilities { opacity: 0.75; }
+.pf-v5-c-alert { border-radius: 14px; }

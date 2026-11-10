@@ -10,6 +10,7 @@ PEOPLE = ["nigel", "siamak", "vitalina", "yigit", "hermann"]   # personal enviro
 ENVS = {
     "test": {
         "display": "NEB Network (Test)",
+        "kicker": "Welcome to · Test",
         "from": "noreply-test@neb-network.app",
         "apps": ["https://the.test.neb-network.app", "https://admin.test.neb-network.app", "https://test.neb-network.app"]
                 + [f"https://{a}-{p}.dev.neb-network.app" for p in PEOPLE for a in ("the", "admin")]
@@ -18,6 +19,7 @@ ENVS = {
     },
     "prod": {
         "display": "NEB Network",
+        "kicker": "Welcome to",
         "from": "noreply@neb-network.app",
         "apps": ["https://the.neb-network.app", "https://admin.neb-network.app",
                  "https://neb-network.app", "https://www.neb-network.app"],
@@ -38,7 +40,10 @@ def client(cid, name, origins):
 def realm(env):
     e = ENVS[env]
     return {
-        "realm": "nna", "enabled": True, "displayName": e["display"], "displayNameHtml": e["display"],
+        "realm": "nna", "enabled": True, "displayName": e["display"],
+        # the login page's header in the app's style (theme "nna"): "Welcome to" over "NEB Network"
+        "displayNameHtml": '<span class="nna-kicker">' + e["kicker"] + '</span>NEB Network',
+        "loginTheme": "nna",
         # sign-up, e-mail login, confirmation, password reset
         "registrationAllowed": True, "registrationEmailAsUsername": True, "loginWithEmailAllowed": True,
         "duplicateEmailsAllowed": False, "verifyEmail": True, "resetPasswordAllowed": True,

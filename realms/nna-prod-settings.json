@@ -1,7 +1,8 @@
 {
   "enabled": true,
   "displayName": "NEB Network",
-  "displayNameHtml": "NEB Network",
+  "displayNameHtml": "<span class=\"nna-kicker\">Welcome to</span>NEB Network",
+  "loginTheme": "nna",
   "registrationAllowed": true,
   "registrationEmailAsUsername": true,
   "loginWithEmailAllowed": true,
