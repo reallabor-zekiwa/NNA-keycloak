@@ -85,6 +85,18 @@ if [ -n "${KEYCLOAK_BACKEND_SECRET:-}" ]; then
       -s protocolMapper=oidc-audience-mapper -s 'config."included.client.audience"=realm-management' \
       -s 'config."access.token.claim"=true' -s 'config."id.token.claim"=false' >/dev/null && echo "setup.sh: audience mapper added"
   fi
+  # Keycloak 26.6+: admin API tokens need the scope "kc-admin-api" and the admin-API audience
+  SID=$($KCADM get client-scopes -r nna --fields id,name --format csv --noquotes 2>/dev/null | grep ',kc-admin-api$' | cut -d, -f1)
+  if [ -z "$SID" ]; then
+    $KCADM create client-scopes -r nna -s name=kc-admin-api -s protocol=openid-connect \
+      -s 'attributes."include.in.token.scope"=true' -s 'attributes."display.on.consent.screen"=false' >/dev/null
+    SID=$($KCADM get client-scopes -r nna --fields id,name --format csv --noquotes 2>/dev/null | grep ',kc-admin-api$' | cut -d, -f1)
+  fi
+  if ! $KCADM get "client-scopes/$SID/protocol-mappers/models" -r nna --fields name --format csv --noquotes 2>/dev/null | grep -q '^admin-api-audience$'; then
+    $KCADM create "client-scopes/$SID/protocol-mappers/models" -r nna -s name=admin-api-audience -s protocol=openid-connect \
+      -s protocolMapper=oidc-admin-api-audience-mapper -s 'config."access.token.claim"=true' >/dev/null
+  fi
+  $KCADM update "clients/$CID/default-client-scopes/$SID" -r nna >/dev/null 2>&1 && echo "setup.sh: kc-admin-api scope on nna-backend"
   $KCADM add-roles -r nna --uusername service-account-nna-backend --cclientid realm-management \
     --rolename manage-users --rolename view-users >/dev/null && echo "setup.sh: service client nna-backend ready"
 fi
