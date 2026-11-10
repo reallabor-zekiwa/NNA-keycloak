@@ -50,6 +50,14 @@
         "description": "NNA admin panel"
       },
       {
+        "name": "offline_access",
+        "description": "${role_offline-access}"
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma_authorization}"
+      },
+      {
         "name": "default-roles-nna",
         "composite": true,
         "composites": {
@@ -57,14 +65,7 @@
             "User",
             "offline_access",
             "uma_authorization"
-          ],
-          "client": {
-            "account": [
-              "view-profile",
-              "manage-account",
-              "delete-account"
-            ]
-          }
+          ]
         }
       }
     ]

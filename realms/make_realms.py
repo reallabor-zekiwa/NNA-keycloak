@@ -58,9 +58,12 @@ def realm(env):
         "roles": {"realm": [
             {"name": "User", "description": "Normal NNA account"},
             {"name": "Admin", "description": "NNA admin panel"},
+            {"name": "offline_access", "description": "${role_offline-access}"},
+            {"name": "uma_authorization", "description": "${role_uma_authorization}"},
+            # account roles (view-profile, manage-account, delete-account) are added to the default role after the
+            # first start – the "account" client only exists once the realm is created (not yet during the import)
             {"name": "default-roles-nna", "composite": True, "composites": {
-                "realm": ["User", "offline_access", "uma_authorization"],
-                "client": {"account": ["view-profile", "manage-account", "delete-account"]}}},
+                "realm": ["User", "offline_access", "uma_authorization"]}},
         ]},
         "defaultRole": {"name": "default-roles-nna", "composite": True},
         # users may delete their own account (Apple guideline 5.1.1(v))
