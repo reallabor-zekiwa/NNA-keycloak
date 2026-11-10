@@ -36,6 +36,11 @@ while IFS=, read -r id provider cfg; do
 done < <($KCADM get authentication/flows/registration/executions -r nna \
            --fields id,providerId,authenticationConfig --format csv --noquotes 2>/dev/null)
 
+# values pasted into a terminal (kubectl --from-file=…=/dev/stdin) end with a newline – strip whitespace
+for v in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET APPLE_SERVICES_ID APPLE_TEAM_ID APPLE_KEY_ID; do
+  if [ -n "${!v:-}" ]; then x="${!v}"; x="${x//[$'\r\n\t ']/}"; printf -v "$v" '%s' "$x"; fi
+done
+
 # 4. Google sign-in – only if the cluster secret env-keycloak provides GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
 if [ -n "${GOOGLE_CLIENT_ID:-}" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
   if $KCADM get identity-provider/instances/google -r nna >/dev/null 2>&1; then
