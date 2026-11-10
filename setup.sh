@@ -23,7 +23,20 @@ $KCADM add-roles -r nna --rname default-roles-nna --cclientid account \
   --rolename view-profile --rolename manage-account --rolename delete-account >/dev/null 2>&1 \
   && echo "setup.sh: default roles incl. delete-account"
 
-# 3. Google sign-in – only if the cluster secret env-keycloak provides GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
+# 3. ask for the password on the sign-up form (Keycloak 26 default with e-mail verification: password only after the
+#    confirmation link – two steps for our users). Setting of the "Password Validation" step of the registration flow.
+while IFS=, read -r id provider cfg; do
+  [ "$provider" = "registration-password-action" ] || continue
+  body='{"alias":"nna-registration-password","config":{"always_set_password_on_register_form":"true"}}'
+  if [ -z "$cfg" ]; then
+    $KCADM create "authentication/executions/$id/config" -r nna -b "$body" >/dev/null
+  else
+    $KCADM update "authentication/config/$cfg" -r nna -b "$body" >/dev/null
+  fi && echo "setup.sh: password on the sign-up form"
+done < <($KCADM get authentication/flows/registration/executions -r nna \
+           --fields id,providerId,authenticationConfig --format csv --noquotes 2>/dev/null)
+
+# 4. Google sign-in – only if the cluster secret env-keycloak provides GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
 if [ -n "${GOOGLE_CLIENT_ID:-}" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
   if $KCADM get identity-provider/instances/google -r nna >/dev/null 2>&1; then
     $KCADM update identity-provider/instances/google -r nna -s enabled=true \
