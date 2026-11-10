@@ -66,4 +66,19 @@ if [ -n "${APPLE_SERVICES_ID:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ] && [ -n "${APP
     -s "config.clientSecret=$APPLE_P8_KEY" -s 'config.defaultScope=name%20email' >/dev/null \
     && echo "setup.sh: Sign in with Apple configured"
 fi
+# 6. service client "nna-backend" for auth-service (delete/find accounts) – secret = generated cluster secret
+#    keycloak-backend, the same value auth-service gets (NNA-deployment)
+if [ -n "${KEYCLOAK_BACKEND_SECRET:-}" ]; then
+  CID=$($KCADM get clients -r nna -q clientId=nna-backend --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+  if [ -z "$CID" ]; then
+    $KCADM create clients -r nna -s clientId=nna-backend -s name="NNA backend (auth-service)" -s enabled=true \
+      -s publicClient=false -s serviceAccountsEnabled=true -s standardFlowEnabled=false \
+      -s directAccessGrantsEnabled=false -s clientAuthenticatorType=client-secret \
+      -s "secret=$KEYCLOAK_BACKEND_SECRET" >/dev/null
+  else
+    $KCADM update "clients/$CID" -r nna -s "secret=$KEYCLOAK_BACKEND_SECRET" -s serviceAccountsEnabled=true >/dev/null
+  fi
+  $KCADM add-roles -r nna --uusername service-account-nna-backend --cclientid realm-management \
+    --rolename manage-users --rolename view-users >/dev/null && echo "setup.sh: service client nna-backend ready"
+fi
 echo "setup.sh: done"
