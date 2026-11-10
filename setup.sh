@@ -1,0 +1,37 @@
+#!/bin/bash
+# Applies the NNA realm settings on every start (idempotent). Runs next to Keycloak inside the container,
+# logs in with the bootstrap admin (KC_BOOTSTRAP_ADMIN_USERNAME/PASSWORD, a generated cluster secret).
+set -uo pipefail
+ENV_NAME="$1"
+KCADM=/opt/keycloak/bin/kcadm.sh
+export HOME=/tmp     # kcadm keeps its token in ~/.keycloak
+
+for ((i = 0; i < 60; i++)); do       # wait until Keycloak answers (up to ~5 min)
+  if $KCADM config credentials --server http://localhost:8080 --realm master \
+       --user "$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$KC_BOOTSTRAP_ADMIN_PASSWORD" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 5
+done
+$KCADM get realms/nna --fields realm >/dev/null || { echo "setup.sh: realm nna not reachable" >&2; exit 1; }
+
+# 1. realm settings from git (sign-up, verification, reset, brute force, mail, tokens, languages …)
+$KCADM update realms/nna -f "/opt/nna/realms/nna-${ENV_NAME}-settings.json" && echo "setup.sh: realm settings applied"
+
+# 2. every new account may view/manage/delete itself (account client exists only after the realm was created)
+$KCADM add-roles -r nna --rname default-roles-nna --cclientid account \
+  --rolename view-profile --rolename manage-account --rolename delete-account >/dev/null 2>&1 \
+  && echo "setup.sh: default roles incl. delete-account"
+
+# 3. Google sign-in – only if the cluster secret env-keycloak provides GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
+if [ -n "${GOOGLE_CLIENT_ID:-}" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
+  if $KCADM get identity-provider/instances/google -r nna >/dev/null 2>&1; then
+    $KCADM update identity-provider/instances/google -r nna -s enabled=true \
+      -s "config.clientId=$GOOGLE_CLIENT_ID" -s "config.clientSecret=$GOOGLE_CLIENT_SECRET" >/dev/null
+  else
+    $KCADM create identity-provider/instances -r nna -s alias=google -s providerId=google -s enabled=true \
+      -s trustEmail=true -s 'config.syncMode=IMPORT' -s 'config.defaultScope=openid email profile' \
+      -s "config.clientId=$GOOGLE_CLIENT_ID" -s "config.clientSecret=$GOOGLE_CLIENT_SECRET" >/dev/null
+  fi && echo "setup.sh: Google sign-in configured"
+fi
+echo "setup.sh: done"

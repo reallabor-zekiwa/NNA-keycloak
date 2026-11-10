@@ -46,7 +46,7 @@ def realm(env):
         # brute-force protection: lock for a while after 5 wrong passwords
         "bruteForceProtected": True, "failureFactor": 5, "waitIncrementSeconds": 60,
         "maxFailureWaitSeconds": 900, "maxDeltaTimeSeconds": 43200, "permanentLockout": False,
-        "passwordPolicy": "length(8) and notUsername(undefined) and notEmail(undefined)",
+        "passwordPolicy": "length(8) and notUsername and notEmail",
         "sslRequired": "external",
         "internationalizationEnabled": True, "supportedLocales": ["de", "en"], "defaultLocale": "de",
         "accessTokenLifespan": 900, "ssoSessionIdleTimeout": 2592000, "ssoSessionMaxLifespan": 7776000,
@@ -88,5 +88,9 @@ def realm(env):
 if __name__ == "__main__":
     here = Path(__file__).parent
     for env in ENVS:
-        (here / f"nna-{env}.json").write_text(json.dumps(realm(env), indent=2) + "\n")
-        print("wrote", here / f"nna-{env}.json")
+        r = realm(env)
+        (here / f"nna-{env}.json").write_text(json.dumps(r, indent=2) + "\n")
+        # settings applied on EVERY start by setup.sh (kcadm update realms/nna) – realm attributes only
+        settings = {k: v for k, v in r.items() if k not in ("realm", "roles", "clients", "requiredActions", "defaultRole")}
+        (here / f"nna-{env}-settings.json").write_text(json.dumps(settings, indent=2) + "\n")
+        print("wrote", here / f"nna-{env}.json", "+ settings")

@@ -17,7 +17,7 @@
   "maxFailureWaitSeconds": 900,
   "maxDeltaTimeSeconds": 43200,
   "permanentLockout": false,
-  "passwordPolicy": "length(8) and notUsername(undefined) and notEmail(undefined)",
+  "passwordPolicy": "length(8) and notUsername and notEmail",
   "sslRequired": "external",
   "internationalizationEnabled": true,
   "supportedLocales": [
