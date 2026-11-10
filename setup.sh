@@ -78,6 +78,13 @@ if [ -n "${KEYCLOAK_BACKEND_SECRET:-}" ]; then
   else
     $KCADM update "clients/$CID" -r nna -s "secret=$KEYCLOAK_BACKEND_SECRET" -s serviceAccountsEnabled=true >/dev/null
   fi
+  # the admin API only accepts tokens with audience "realm-management"
+  CID=$($KCADM get clients -r nna -q clientId=nna-backend --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+  if ! $KCADM get "clients/$CID/protocol-mappers/models" -r nna --fields name --format csv --noquotes 2>/dev/null | grep -q '^realm-management-audience$'; then
+    $KCADM create "clients/$CID/protocol-mappers/models" -r nna -s name=realm-management-audience -s protocol=openid-connect \
+      -s protocolMapper=oidc-audience-mapper -s 'config."included.client.audience"=realm-management' \
+      -s 'config."access.token.claim"=true' -s 'config."id.token.claim"=false' >/dev/null && echo "setup.sh: audience mapper added"
+  fi
   $KCADM add-roles -r nna --uusername service-account-nna-backend --cclientid realm-management \
     --rolename manage-users --rolename view-users >/dev/null && echo "setup.sh: service client nna-backend ready"
 fi
