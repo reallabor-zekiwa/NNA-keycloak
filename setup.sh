@@ -47,4 +47,18 @@ if [ -n "${GOOGLE_CLIENT_ID:-}" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
       -s "config.clientId=$GOOGLE_CLIENT_ID" -s "config.clientSecret=$GOOGLE_CLIENT_SECRET" >/dev/null
   fi && echo "setup.sh: Google sign-in configured"
 fi
+
+# 5. Sign in with Apple (extension providers/apple-identity-provider-*.jar) – only if env-keycloak provides
+#    APPLE_SERVICES_ID, APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_P8_KEY (raw content of the .p8 file)
+if [ -n "${APPLE_SERVICES_ID:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ] && [ -n "${APPLE_KEY_ID:-}" ] && [ -n "${APPLE_P8_KEY:-}" ]; then
+  if $KCADM get identity-provider/instances/apple -r nna >/dev/null 2>&1; then
+    OP=(update identity-provider/instances/apple)
+  else
+    OP=(create identity-provider/instances -s alias=apple -s providerId=apple -s 'config.syncMode=IMPORT')
+  fi
+  $KCADM "${OP[@]}" -r nna -s enabled=true -s trustEmail=true -s displayName=Apple \
+    -s "config.clientId=$APPLE_SERVICES_ID" -s "config.teamId=$APPLE_TEAM_ID" -s "config.keyId=$APPLE_KEY_ID" \
+    -s "config.clientSecret=$APPLE_P8_KEY" -s 'config.defaultScope=name%20email' >/dev/null \
+    && echo "setup.sh: Sign in with Apple configured"
+fi
 echo "setup.sh: done"

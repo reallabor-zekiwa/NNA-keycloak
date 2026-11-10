@@ -12,8 +12,10 @@ Official Keycloak image plus our realm settings (realm `nna`). Later also the Si
   `nna-<env>.json` creates the realm on the very first start; `nna-<env>-settings.json` (realm attributes) and the
   default roles are re-applied on **every** start by `setup.sh` (kcadm with the bootstrap admin). Clients, roles and
   identity providers created in the admin console stay as they are.
-- **Google sign-in:** either in the admin console (Identity providers → Google), or as cluster secret `env-keycloak`
-  with `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` – setup.sh then configures it on the next start.
+- **Google / Apple sign-in:** cluster secret `env-keycloak` (per namespace, created by an admin, never in git) with
+  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_SERVICES_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_P8_KEY`
+  (raw .p8 content) – setup.sh configures both identity providers on the next start. Apple uses the extension
+  `providers/apple-identity-provider-1.17.0.jar` (klausbetz/apple-identity-provider-keycloak, for Keycloak ≥ 26.5).
 - **What the realm does:** sign-up with e-mail, e-mail confirmation, forgot password, users can delete their account,
   brute-force protection, roles `User` (default) and `Admin`. Clients `nna-webxr` and `nna-admin` (public, PKCE S256).
 - **Mail:** via the internal mail service `mail.nna-prod.svc.cluster.local:587` (NNA-deployment, k8s-prod); sender
