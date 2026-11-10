@@ -39,3 +39,21 @@ a, .pf-v5-c-button.pf-m-link { color: var(--nna-ink-strong); text-decoration: un
 /* the language switch: quiet */
 #kc-locale, .pf-v5-c-login__main-header-utilities { opacity: 0.75; }
 .pf-v5-c-alert { border-radius: 14px; }
+
+/* fixes after the first look (2026-11-10) */
+#kc-header-wrapper, #kc-header-wrapper * { color: var(--nna-ink-strong) !important; }
+#kc-header-wrapper .nna-kicker { color: var(--nna-ink) !important; }
+.pf-v5-c-login__main { border-top: 0 !important; --pf-v5-c-login__main--BorderTop: 0; }
+.pf-v5-c-login__main::before, .pf-v5-c-login__container::before { display: none !important; }
+#kc-social-providers ul { flex-direction: column; gap: 10px; margin: 0; }
+#kc-social-providers li { width: 100%; }
+#kc-social-providers a, #kc-social-providers .pf-v5-c-button {
+  width: 100% !important; display: flex !important; align-items: center; justify-content: center; gap: 10px;
+  font: 500 16px/1 'Inter', system-ui, -apple-system, sans-serif !important; padding: 0 16px !important; min-height: 46px; }
+#kc-social-providers a span, #kc-social-providers .kc-social-provider-name { font: inherit !important; }
+#kc-social-providers img, #kc-social-providers svg, #kc-social-providers i { width: 18px; height: 18px; }
+.pf-v5-c-input-group button, .pf-v5-c-input-group .pf-v5-c-button.pf-m-control {
+  background: none !important; border: 0 !important; box-shadow: none !important; min-height: 0; }
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control::after { border: 0 !important; }
+.pf-v5-c-form-control:focus-within::after { border-bottom: 1px solid var(--nna-ink-strong) !important; }
+.pf-v5-c-form-control > input:focus { outline: none; box-shadow: none; }
