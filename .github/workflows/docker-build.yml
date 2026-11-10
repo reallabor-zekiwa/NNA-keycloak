@@ -1,0 +1,59 @@
+# Builds the NNA login server into GHCR – same scheme as the other reallabor-zekiwa apps:
+#   branch test  -> ghcr.io/reallabor-zekiwa/dev/keycloak:<yyyy.mm.dd>-<sha7>, :latest  (deploy to test)
+#   branch main  -> ghcr.io/reallabor-zekiwa/keycloak:<yyyy.mm.dd>-<sha7>, :latest      (deploy to prod)
+#   other branch -> ghcr.io/reallabor-zekiwa/dev/keycloak:<branch>-<sha7>, :<branch>   (personal environments only)
+# Deploy: NNA-deployment -> Actions -> "Deploy NNA Services" -> service keycloak.
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [test, main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: keycloak
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Realm files are up to date
+        run: python3 realms/make_realms.py && git diff --exit-code realms/
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Image tags for this branch
+        id: t
+        env:
+          BRANCH: ${{ github.base_ref || github.ref_name }}
+        run: |
+          SHA7="${GITHUB_SHA::7}"
+          VER="$(date -u +%Y.%m.%d)-$SHA7"
+          ORG="${{ github.repository_owner }}"
+          case "$BRANCH" in
+            main) IMG="$REGISTRY/$ORG/$IMAGE"; TAGS="$IMG:latest,$IMG:$VER,$IMG:$SHA7" ;;
+            test) IMG="$REGISTRY/$ORG/dev/$IMAGE"; TAGS="$IMG:latest,$IMG:$VER,$IMG:$SHA7" ;;
+            *)    SLUG="$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/--*/-/g; s/^-//; s/-$//' | cut -c1-40)"
+                  IMG="$REGISTRY/$ORG/dev/$IMAGE"; TAGS="$IMG:$SLUG,$IMG:$SLUG-$SHA7" ;;
+          esac
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+          echo "Image tags: $TAGS"
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.t.outputs.tags }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

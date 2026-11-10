@@ -1,0 +1,169 @@
+{
+  "realm": "nna",
+  "enabled": true,
+  "displayName": "NEB Network",
+  "displayNameHtml": "NEB Network",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "permanentLockout": false,
+  "passwordPolicy": "length(8) and notUsername(undefined) and notEmail(undefined)",
+  "sslRequired": "external",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de",
+    "en"
+  ],
+  "defaultLocale": "de",
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 7776000,
+  "offlineSessionIdleTimeout": 7776000,
+  "smtpServer": {
+    "host": "mail.nna-prod.svc.cluster.local",
+    "port": "587",
+    "from": "noreply@neb-network.app",
+    "fromDisplayName": "NEB Network",
+    "replyTo": "",
+    "auth": "false",
+    "ssl": "false",
+    "starttls": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "User",
+        "description": "Normal NNA account"
+      },
+      {
+        "name": "Admin",
+        "description": "NNA admin panel"
+      },
+      {
+        "name": "default-roles-nna",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "User",
+            "offline_access",
+            "uma_authorization"
+          ],
+          "client": {
+            "account": [
+              "view-profile",
+              "manage-account",
+              "delete-account"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-nna",
+    "composite": true
+  },
+  "requiredActions": [
+    {
+      "alias": "delete_account",
+      "name": "Delete Account",
+      "providerId": "delete_account",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 60,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "nna-webxr",
+      "name": "NEB Network App",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "https://the.neb-network.app/*",
+        "https://neb-network.app/*",
+        "https://www.neb-network.app/*"
+      ],
+      "webOrigins": [
+        "https://the.neb-network.app",
+        "https://neb-network.app",
+        "https://www.neb-network.app"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "frontchannelLogout": true,
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "nna-admin",
+      "name": "NEB Network Admin",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "https://admin.neb-network.app/*"
+      ],
+      "webOrigins": [
+        "https://admin.neb-network.app"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "frontchannelLogout": true,
+      "fullScopeAllowed": true
+    }
+  ],
+  "eventsEnabled": true,
+  "eventsExpiration": 2592000,
+  "adminEventsEnabled": true,
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "REGISTER",
+    "REGISTER_ERROR",
+    "DELETE_ACCOUNT",
+    "VERIFY_EMAIL",
+    "SEND_RESET_PASSWORD",
+    "UPDATE_PASSWORD",
+    "IDENTITY_PROVIDER_LOGIN"
+  ]
+}
