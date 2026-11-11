@@ -23,6 +23,12 @@ $KCADM add-roles -r nna --rname default-roles-nna --cclientid account \
   --rolename view-profile --rolename manage-account --rolename delete-account >/dev/null 2>&1 \
   && echo "setup.sh: default roles incl. delete-account"
 
+# 2b. Sign in with Apple: Keycloak keeps Apple's tokens (storeToken, step 5); each user may read their own stored token
+#     (GET /realms/nna/broker/apple/token) – auth-service does that at sign-in and revokes it at Apple when the
+#     account is deleted (Apple guideline 5.1.1(v)).
+$KCADM add-roles -r nna --rname default-roles-nna --cclientid broker --rolename read-token >/dev/null 2>&1 \
+  && echo "setup.sh: default role broker/read-token"
+
 # 3. ask for the password on the sign-up form (Keycloak 26 default with e-mail verification: password only after the
 #    confirmation link – two steps for our users). Setting of the "Password Validation" step of the registration flow.
 while IFS=, read -r id provider cfg; do
@@ -63,8 +69,8 @@ if [ -n "${APPLE_SERVICES_ID:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ] && [ -n "${APP
   fi
   $KCADM "${OP[@]}" -r nna -s enabled=true -s trustEmail=true -s displayName=Apple \
     -s "config.clientId=$APPLE_SERVICES_ID" -s "config.teamId=$APPLE_TEAM_ID" -s "config.keyId=$APPLE_KEY_ID" \
-    -s "config.clientSecret=$APPLE_P8_KEY" -s 'config.defaultScope=name%20email' >/dev/null \
-    && echo "setup.sh: Sign in with Apple configured"
+    -s "config.clientSecret=$APPLE_P8_KEY" -s 'config.defaultScope=name%20email' -s storeToken=true >/dev/null \
+    && echo "setup.sh: Sign in with Apple configured (tokens stored)"
 fi
 # 6. service client "nna-backend" for auth-service (delete/find accounts) – secret = generated cluster secret
 #    keycloak-backend, the same value auth-service gets (NNA-deployment)
