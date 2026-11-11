@@ -1,68 +1,140 @@
-/* NNA login theme – matches NNA-webxr app/src/ui/auth-screen.ts (ink #3d3d3d / #222, pills radius 23px). */
+/* NNA login theme (2026-11-11) – the app's sign-in on the globe (NNA-webxr app/src/ui/auth-screen.ts, Yiğit's design):
+   the backdrop of the loading globe, "Welcome to / NEB Network" in Space Grotesk, the globe (a loop recorded from the app),
+   underlined inputs without labels, dark pill + outlined pills. template.ftl lays out the page (.nna-page). */
 :root {
-  --nna-ink: #3d3d3d; --nna-ink-strong: #222222; --nna-bg: #f2f2f2; --nna-line: rgba(61, 61, 61, 0.3);
+  --nna-ink: #3d3d3d; --nna-ink-strong: #222222; --nna-line: rgba(61, 61, 61, 0.3); --nna-red: #dc2626;
   --pf-v5-global--FontFamily--text: 'Inter', system-ui, -apple-system, sans-serif;
   --pf-v5-global--FontFamily--heading: 'Space Grotesk', system-ui, sans-serif;
   --pf-v5-global--primary-color--100: #222222;
   --pf-v5-global--link--Color: #222222; --pf-v5-global--link--Color--hover: #000;
+  --pf-v5-global--BackgroundColor--100: transparent;
 }
-html, body, .pf-v5-c-login { background: var(--nna-bg) !important; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: var(--nna-ink); }
-.pf-v5-c-login__container { max-width: 440px; padding: 0 20px; }
-/* the header: "Welcome to" over "NEB Network" (realm displayNameHtml) */
-#kc-header, #kc-header-wrapper, .pf-v5-c-login__header { text-align: center; color: var(--nna-ink-strong); text-transform: none; }
-#kc-header-wrapper { font: 400 38px/1.12 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.01em; padding: 48px 0 20px; }
-#kc-header-wrapper .nna-kicker { display: block; font: 300 18px/1.3 'Space Grotesk', system-ui, sans-serif; color: var(--nna-ink); letter-spacing: 0; }
-/* the card */
-.pf-v5-c-login__main { background: #fff; border-radius: 28px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06); }
-.pf-v5-c-login__main-header { padding-top: 32px; }
-.pf-v5-c-login__main-header .pf-v5-c-title, #kc-page-title { font: 300 17px/1.4 'Inter', system-ui, sans-serif; color: var(--nna-ink); text-align: center; }
-/* inputs: a hairline under the text, like the app */
-.pf-v5-c-form-control { --pf-v5-c-form-control--BorderRadius: 0; background: none; }
-.pf-v5-c-form-control::before { border: 0 !important; }
-.pf-v5-c-form-control::after { border-bottom: 1px solid var(--nna-line) !important; border-width: 0 0 1px !important; }
-.pf-v5-c-form-control > input, .pf-v5-c-form-control > select { font: 400 16px/1.4 'Inter', system-ui, sans-serif; color: var(--nna-ink-strong); padding-left: 2px; }
-.pf-v5-c-form__label-text { font-weight: 400; color: var(--nna-ink); }
-/* buttons: dark pill (primary), outlined pill (Apple, Google, back) */
-.pf-v5-c-button { border-radius: 23px !important; min-height: 46px; font: 500 16px/1 'Inter', system-ui, sans-serif; }
-.pf-v5-c-button.pf-m-primary { background: var(--nna-ink-strong); border: 1px solid var(--nna-ink-strong); color: #fff; }
-.pf-v5-c-button.pf-m-primary:hover { background: #000; }
-.pf-v5-c-button.pf-m-secondary, #kc-social-providers .pf-v5-c-button, #kc-social-providers a {
-  background: transparent !important; color: var(--nna-ink-strong) !important; border: 1px solid var(--nna-ink) !important;
-  border-radius: 23px !important; box-shadow: none !important; }
-.pf-v5-c-button.pf-m-secondary::after { border: 0 !important; }
-#kc-social-providers ul { display: flex; gap: 10px; padding: 0; }
-#kc-social-providers li { flex: 1 1 0; list-style: none; }
-#kc-social-providers .pf-v5-c-login__main-footer-band, .pf-v5-c-login__main-footer-band { background: none; border: 0; }
-/* the "or sign in with" line */
-.kc-social-section-text, #kc-social-providers h2, .pf-v5-c-login__main-footer-links-item { color: var(--nna-ink); font-weight: 300; }
-a, .pf-v5-c-button.pf-m-link { color: var(--nna-ink-strong); text-decoration: underline; text-underline-offset: 2px; }
-/* the language switch: quiet */
-#kc-locale, .pf-v5-c-login__main-header-utilities { opacity: 0.75; }
-.pf-v5-c-alert { border-radius: 14px; }
+html, body.nna-body { min-height: 100%; }
+html.login-pf, body.nna-body {
+  margin: 0; color: var(--nna-ink);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(ellipse 75% 70% at 50% 50%, #f6f6f7 35%, #ececee 100%) fixed #f2f2f3 !important;
+}
+body.nna-body * { box-sizing: border-box; }
 
-/* fixes after the first look (2026-11-10) */
-#kc-header-wrapper, #kc-header-wrapper * { color: var(--nna-ink-strong) !important; }
-#kc-header-wrapper .nna-kicker { color: var(--nna-ink) !important; }
-.pf-v5-c-login__main { border-top: 0 !important; --pf-v5-c-login__main--BorderTop: 0; }
-.pf-v5-c-login__main::before, .pf-v5-c-login__container::before { display: none !important; }
-#kc-social-providers ul { flex-direction: column; gap: 10px; margin: 0; }
-#kc-social-providers li { width: 100%; }
+/* ---------------------------------------------------------------- the page: portrait = title / globe / form */
+.nna-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+.nna-head { order: 1; flex: none; margin: calc(env(safe-area-inset-top, 0px) + 54px + clamp(4px, 3vh, 36px)) 31px 0; text-align: center; }
+.nna-globe { order: 2; flex: 1 1 auto; position: relative; min-height: 110px; margin: 16px 31px; }
+.nna-panel { order: 3; flex: none; width: 100%; max-width: 400px; margin: 0 auto; padding: 0 31px calc(env(safe-area-inset-bottom, 0px) + 28px);
+  text-align: center; background: none !important; box-shadow: none !important; border: 0 !important; }
+.nna-globe video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply;
+  background: transparent; pointer-events: none; }
+
+/* the title: "Welcome to" over "NEB Network" (realm displayNameHtml), then what this page asks */
+.nna-brand { margin: 0; padding: 0; font: 400 38px/1.12 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.01em; color: var(--nna-ink-strong) !important; text-transform: none; }
+.nna-brand .nna-kicker { display: block; margin-bottom: 2px; font: 300 18px/1.3 'Space Grotesk', system-ui, sans-serif; letter-spacing: 0; color: var(--nna-ink) !important; }
+.nna-sub, #kc-page-title.nna-sub { margin: 12px auto 0; max-width: 330px; font: 300 17px/1.45 'Inter', system-ui, sans-serif !important; color: var(--nna-ink) !important; text-wrap: balance; }
+
+/* ---------------------------------------------------------------- landscape (as the app's SIDE_MQ): globe left, column right */
+@media (orientation: landscape) and (min-width: 640px) {
+  .nna-page { display: grid; --gw: min(45vh, 38vw, 560px);
+    grid-template-columns: var(--gw) minmax(280px, 400px); grid-template-rows: 1fr auto auto 1fr;
+    column-gap: 72px; justify-content: center; padding: calc(env(safe-area-inset-top, 0px) + 54px) 24px env(safe-area-inset-bottom, 0px); }
+  .nna-globe { grid-column: 1; grid-row: 1 / -1; align-self: center; height: var(--gw); margin: 0; }
+  .nna-head { grid-column: 2; grid-row: 2; margin: 0; text-align: left; }
+  .nna-sub, #kc-page-title.nna-sub { margin-left: 0; max-width: none; }
+  .nna-panel { grid-column: 2; grid-row: 3; margin: 32px 0 0; padding: 0 0 24px; max-width: none; text-align: left; }
+  .nna-panel .pf-v5-c-form-control > input { text-align: left !important; padding-left: 2px !important; }
+  .nna-email { justify-content: flex-start !important; }
+}
+@media (min-width: 720px) and (min-height: 700px) {
+  .nna-brand .nna-kicker { font-size: 20px; }
+  .nna-brand { font-size: 46px; }
+}
+@media (max-height: 700px) {
+  .nna-head { margin-top: calc(env(safe-area-inset-top, 0px) + 24px); }
+  .nna-brand .nna-kicker { font-size: 16px; }
+  .nna-brand { font-size: 32px; }
+  .nna-sub, #kc-page-title.nna-sub { margin-top: 8px; font-size: 16px !important; }
+}
+
+/* ---------------------------------------------------------------- the form */
+.nna-panel .pf-v5-c-login__main-body { padding: 0 !important; margin: 0; }
+.nna-panel .pf-v5-c-form { gap: 0; --pf-v5-c-form--GridGap: 14px; }
+.nna-panel .pf-v5-c-form__group { margin: 0 0 14px; }
+/* labels → placeholders (template.ftl copies each label into its input) */
+html.nna-ph .nna-panel .pf-v5-c-form__group-label { display: none; }
+.nna-panel .pf-v5-c-form__label-text { font: 300 13px/1.4 'Inter', system-ui, sans-serif; color: var(--nna-ink); }
+.nna-panel .pf-v5-c-form-control { --pf-v5-c-form-control--BorderRadius: 0; background: none !important; }
+.nna-panel .pf-v5-c-form-control::before { border: 0 !important; }
+.nna-panel .pf-v5-c-form-control::after { border: 0 !important; border-bottom: 1px solid var(--nna-line) !important; }
+.nna-panel .pf-v5-c-form-control:focus-within::after { border-bottom-color: var(--nna-ink) !important; }
+.nna-panel .pf-v5-c-form-control.pf-m-error::after { border-bottom-color: var(--nna-red) !important; }
+.nna-panel .pf-v5-c-form-control > input, .nna-panel .pf-v5-c-form-control > select {
+  padding: 8px 4px !important; background: none; border: 0; outline: none; box-shadow: none;
+  font: 300 16px/1.35 'Inter', system-ui, sans-serif !important; color: var(--nna-ink-strong); text-align: center; }
+.nna-panel .pf-v5-c-form-control > input::placeholder { color: var(--nna-ink); opacity: 0.45; }
+.nna-panel input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px #f6f6f7 inset; -webkit-text-fill-color: var(--nna-ink-strong); }
+.nna-panel .pf-v5-c-form-control__utilities { display: none; }
+/* the password's eye: quiet, inside the line */
+.nna-panel .pf-v5-c-input-group { position: relative; }
+.nna-panel .pf-v5-c-input-group button, .nna-panel .pf-v5-c-input-group .pf-v5-c-button.pf-m-control {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%); min-height: 0; padding: 6px;
+  background: none !important; border: 0 !important; box-shadow: none !important; color: var(--nna-ink); opacity: 0.55; }
+.nna-panel .pf-v5-c-input-group .pf-v5-c-button.pf-m-control::after { border: 0 !important; }
+/* errors and notes */
+.nna-panel .pf-v5-c-helper-text__item-text, .nna-panel .pf-v5-c-form__helper-text, .nna-field-error {
+  font: 300 14px/1.4 'Inter', system-ui, sans-serif; color: var(--nna-ink); }
+.nna-panel .pf-m-error .pf-v5-c-helper-text__item-text, .nna-panel .kc-feedback-text, .nna-field-error { color: var(--nna-red); }
+.nna-field-error { margin: -4px 0 10px; }
+.nna-alert.pf-v5-c-alert { display: block; padding: 10px 14px; margin: 0 0 14px; border-radius: 14px; border: 0; box-shadow: none;
+  background: rgba(255, 255, 255, 0.6); font: 300 14px/1.45 'Inter', system-ui, sans-serif; }
+.nna-alert.pf-m-success .kc-feedback-text, .nna-alert.pf-m-info .kc-feedback-text { color: var(--nna-ink-strong); }
+.nna-alert::before { display: none; }
+/* remember me / forgot password: one small line */
+.nna-panel .pf-v5-c-form__helper-text .pf-v5-c-helper-text { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+.nna-panel .pf-v5-c-check { align-items: center; gap: 6px; }
+.nna-panel .pf-v5-c-check__label, .nna-panel #kc-form-options, .nna-panel .pf-v5-c-helper-text a { font: 300 13px/1.5 'Inter', system-ui, sans-serif; color: var(--nna-ink); }
+.nna-panel .pf-v5-c-check__input { accent-color: var(--nna-ink-strong); }
+/* the e-mail the app passed: text + "Change" instead of a field to type again */
+.nna-email { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 6px;
+  font: 400 16px/1.4 'Inter', system-ui, sans-serif; color: var(--nna-ink-strong); }
+.nna-email-addr { overflow-wrap: anywhere; }
+.nna-link { -webkit-appearance: none; appearance: none; margin: 0; padding: 0; border: 0; background: none; cursor: pointer;
+  font: 300 13px/1.5 'Inter', system-ui, sans-serif; color: var(--nna-ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+#nna-user-field[hidden] { display: none !important; }
+
+/* ---------------------------------------------------------------- buttons: as the app's pills */
+.nna-panel .pf-v5-c-form__actions { margin: 12px 0 0 !important; padding: 0 !important; gap: 10px; }
+.nna-panel .pf-v5-c-form__group:has(.pf-v5-c-form__actions) { margin-bottom: 0; }
+.nna-panel .pf-v5-c-button { width: 100%; min-height: 46px; height: 46px; margin: 0; padding: 0 20px; border-radius: 23px !important;
+  font: 400 16px/1 'Inter', system-ui, sans-serif !important; display: flex; align-items: center; justify-content: center; }
+.nna-panel .pf-v5-c-button.pf-m-primary { background: var(--nna-ink-strong) !important; border: 1px solid var(--nna-ink-strong) !important; color: #fff !important; font-weight: 500 !important; }
+.nna-panel .pf-v5-c-button.pf-m-primary:hover { background: #000 !important; }
+.nna-panel .pf-v5-c-button.pf-m-secondary { background: transparent !important; color: var(--nna-ink-strong) !important; border: 1px solid var(--nna-ink) !important; }
+.nna-panel .pf-v5-c-button::after { border: 0 !important; }
+/* "or", then Apple and Google side by side (the app's version 2b) */
+.nna-panel .kc-login-divider { display: flex; align-items: center; gap: 14px; margin: 14px 0 0; padding: 0; }
+.nna-panel .kc-login-divider::before, .nna-panel .kc-login-divider::after { content: ''; flex: 1 1 0; height: 1px; background: rgba(61, 61, 61, 0.2); }
+.nna-panel .kc-login-divider span { font: 300 13px/1 'Inter', system-ui, sans-serif !important; color: var(--nna-ink) !important; }
+.nna-panel .kc-login-divider hr, .nna-panel .kc-login-divider .pf-v5-c-divider { display: none; }
+.nna-panel .pf-v5-c-login__main-footer { padding: 0 !important; margin: 0; }
+#kc-social-providers { margin: 0; padding: 0; }
+#kc-social-providers ul { display: flex; flex-direction: row; gap: 10px; margin: 12px 0 0; padding: 0 !important; }
+#kc-social-providers li { flex: 1 1 0; min-width: 0; list-style: none; padding: 0 !important; }
 #kc-social-providers a, #kc-social-providers .pf-v5-c-button {
-  width: 100% !important; display: flex !important; align-items: center; justify-content: center; gap: 10px;
-  font: 500 16px/1 'Inter', system-ui, -apple-system, sans-serif !important; padding: 0 16px !important; min-height: 46px; }
-#kc-social-providers a span, #kc-social-providers .kc-social-provider-name { font: inherit !important; }
-#kc-social-providers img, #kc-social-providers svg, #kc-social-providers i { width: 18px; height: 18px; }
-.pf-v5-c-input-group button, .pf-v5-c-input-group .pf-v5-c-button.pf-m-control {
-  background: none !important; border: 0 !important; box-shadow: none !important; min-height: 0; }
-.pf-v5-c-input-group .pf-v5-c-button.pf-m-control::after { border: 0 !important; }
-.pf-v5-c-form-control:focus-within::after { border-bottom: 1px solid var(--nna-ink-strong) !important; }
-.pf-v5-c-form-control > input:focus { outline: none; box-shadow: none; }
-
-/* round 2: the bar sits on the main header; social links are pf-m-tertiary (own ::after outline) */
-.pf-v5-c-login__main-header { border-top: 0 !important; --pf-v5-c-login__main-header--BorderTopWidth: 0; }
-#kc-social-providers .pf-v5-c-button.pf-m-tertiary::after { border: 0 !important; display: none !important; }
-#kc-social-providers a { text-decoration: none !important; justify-content: center !important; }
+  width: 100% !important; height: 46px; min-height: 46px; display: flex !important; align-items: center; justify-content: center !important; gap: 10px;
+  padding: 0 12px !important; background: transparent !important; color: var(--nna-ink-strong) !important; border: 1px solid var(--nna-ink) !important;
+  border-radius: 23px !important; box-shadow: none !important; text-decoration: none !important; font: 400 16px/1 'Inter', system-ui, -apple-system, sans-serif !important; }
+#kc-social-providers .pf-v5-c-button.pf-m-tertiary::after { display: none !important; }
 #kc-social-providers a:hover { background: rgba(0, 0, 0, 0.03) !important; }
+#kc-social-providers a span, #kc-social-providers .kc-social-provider-name { font: inherit !important; margin: 0 !important; }
+#kc-social-providers img, #kc-social-providers svg { width: 19px; height: 19px; flex: none; }
+/* register / back to sign in: the small line under it all */
+.nna-panel #kc-info, .nna-panel .pf-v5-c-login__main-footer-band { margin: 16px 0 0; padding: 0 !important; background: none !important; border: 0 !important; }
+.nna-panel #kc-info, .nna-panel #kc-info a, .nna-panel #kc-form-options a, .nna-panel .instruction { font: 300 14px/1.5 'Inter', system-ui, sans-serif; color: var(--nna-ink); }
+.nna-panel a { color: var(--nna-ink-strong); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.nna-panel .instruction { margin: 0 0 12px; }
+/* the username shown on later steps (reset, OTP …) */
+.nna-shown-username { margin-bottom: 12px; }
+.nna-shown-username input#kc-attempted-username { text-align: center; border: 0; background: none; font: 400 16px/1.4 'Inter', system-ui, sans-serif; color: var(--nna-ink-strong); }
+
 /* Apple's mark: the bundled icon font isn't loaded here – draw the logo ourselves */
 #social-apple > .fa { display: inline !important; font: 500 16px/1 "Inter", system-ui, sans-serif !important; }
 #social-apple > .fa::before { content: none !important; }
