@@ -161,6 +161,12 @@
       <source src="${url.resourcesPath}/img/globe.mp4" type="video/mp4">
     </video>
     <script>
+      (function () {   /* the globe as a square as big as its box allows (nna.css cuts it to the disc) */
+        var g = document.querySelector(".nna-globe");
+        function fit() { if (g) g.style.setProperty("--nna-gs", Math.max(0, Math.min(g.clientWidth, g.clientHeight)) + "px"); }
+        fit(); window.addEventListener("resize", fit); window.addEventListener("load", fit);
+        if (window.ResizeObserver && g) new ResizeObserver(fit).observe(g);
+      })();
       (function () {   /* reduced motion: the still frame only */
         var v = document.getElementById("nna-globe-video");
         if (v && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); }
