@@ -47,14 +47,15 @@ for v in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET APPLE_SERVICES_ID APPLE_TEAM_ID A
   if [ -n "${!v:-}" ]; then x="${!v}"; x="${x//[$'\r\n\t ']/}"; printf -v "$v" '%s' "$x"; fi
 done
 
-# 4. Google sign-in – only if the cluster secret env-keycloak provides GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
+# 4. Google sign-in (always with Google's account picker – prompt=select_account: after "Sign out" the next
+#    Google tap must not silently reuse the Google session, Vitalina 2026-11-11) – only if the cluster secret env-keycloak provides GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
 if [ -n "${GOOGLE_CLIENT_ID:-}" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
   if $KCADM get identity-provider/instances/google -r nna >/dev/null 2>&1; then
-    $KCADM update identity-provider/instances/google -r nna -s enabled=true \
+    $KCADM update identity-provider/instances/google -r nna -s enabled=true -s 'config.prompt=select_account' \
       -s "config.clientId=$GOOGLE_CLIENT_ID" -s "config.clientSecret=$GOOGLE_CLIENT_SECRET" >/dev/null
   else
     $KCADM create identity-provider/instances -r nna -s alias=google -s providerId=google -s enabled=true \
-      -s trustEmail=true -s 'config.syncMode=IMPORT' -s 'config.defaultScope=openid email profile' \
+      -s trustEmail=true -s 'config.syncMode=IMPORT' -s 'config.defaultScope=openid email profile' -s 'config.prompt=select_account' \
       -s "config.clientId=$GOOGLE_CLIENT_ID" -s "config.clientSecret=$GOOGLE_CLIENT_SECRET" >/dev/null
   fi && echo "setup.sh: Google sign-in configured"
 fi
