@@ -35,7 +35,7 @@
                  another browser (mail app → Safari) while this page waits inside the app. Opening this page again
                  never re-sends the mail (Keycloak VerifyEmail); once confirmed it redirects (→ app, or → sign-in
                  form when the account was created in this session). -->
-            <span id="nna-verify-poll" data-url="${url.loginAction}" hidden></span>
+            <span id="nna-verify-poll" data-url="${url.loginAction}" data-email="${(verifyEmail!(user.email)!'')}" hidden></span>
             <script>
               (function () {
                 var url = document.getElementById("nna-verify-poll").getAttribute("data-url");
@@ -45,7 +45,11 @@
                   if (++tries > 200) return;                       // ~15 min
                   fetch(url, { credentials: "include", redirect: "manual", cache: "no-store" })
                     .then(function (r) {
-                      if (r.type === "opaqueredirect" || (r.status >= 300 && r.status < 400)) window.location.assign(url);
+                      if (r.type === "opaqueredirect" || (r.status >= 300 && r.status < 400)) {
+                        // confirmed elsewhere: the next page (Keycloak restarts the sign-in) says so and fills in the email
+                        try { sessionStorage.setItem("nna-email-confirmed", JSON.stringify({ email: document.getElementById("nna-verify-poll").getAttribute("data-email") || "", at: Date.now() })); } catch (e) {}
+                        window.location.assign(url);
+                      }
                       else setTimeout(check, 4000);
                     })
                     .catch(function () { setTimeout(check, 8000); });

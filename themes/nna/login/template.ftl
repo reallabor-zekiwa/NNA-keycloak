@@ -235,6 +235,29 @@
     document.documentElement.classList.add("nna-ph");
   })();
 </script>
+<#-- NNA (2026-11-11): back from "check your email" after the address was confirmed (login-verify-email.ftl set the
+     flag): Keycloak restarts the sign-in and would say "Your login attempt timed out" – say "Email confirmed" instead
+     and fill in the address, so only the password is left. -->
+<script>
+  (function () {
+    var raw = null;
+    try { raw = sessionStorage.getItem("nna-email-confirmed"); sessionStorage.removeItem("nna-email-confirmed"); } catch (e) {}
+    if (!raw) return;
+    var d; try { d = JSON.parse(raw); } catch (e) { return; }
+    if (!d || Date.now() - (d.at || 0) > 10 * 60 * 1000) return;
+    var de = (document.documentElement.lang || "").indexOf("de") === 0;
+    var text = de ? "E-Mail bestätigt – bitte melde dich an." : "Email confirmed – please sign in.";
+    var alert = document.querySelector(".nna-alert");
+    if (alert) {
+      alert.className = alert.className.replace(/pf-m-(danger|warning|info)/, "pf-m-success");
+      var t = alert.querySelector(".kc-feedback-text"); if (t) t.textContent = text;
+    }
+    var u = document.getElementById("username");
+    if (u && !u.value && d.email) { u.value = d.email; }
+    var p = document.getElementById("password");
+    if (p && u && u.value) p.focus();
+  })();
+</script>
 </body>
 </html>
 </#macro>
