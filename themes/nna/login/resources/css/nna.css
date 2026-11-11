@@ -20,7 +20,7 @@ body.nna-body * { box-sizing: border-box; }
 /* ---------------------------------------------------------------- the page: portrait = title / globe / form */
 .nna-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 .nna-head { order: 1; flex: none; margin: calc(env(safe-area-inset-top, 0px) + 54px + clamp(4px, 3vh, 36px)) 31px 0; text-align: center; }
-.nna-globe { order: 2; flex: 1 1 auto; position: relative; min-height: 110px; margin: 16px 31px; }
+.nna-globe { order: 2; flex: 1 1 auto; position: relative; min-height: 110px; margin: 16px 31px; container-type: size; }
 .nna-panel { order: 3; flex: none; width: 100%; max-width: 400px; margin: 0 auto; padding: 0 31px calc(env(safe-area-inset-bottom, 0px) + 28px);
   text-align: center; background: none !important; box-shadow: none !important; border: 0 !important; }
 .nna-globe video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply;
@@ -167,4 +167,12 @@ html.nna-ph .nna-panel .pf-v5-c-form__group-label { display: none; }
 @media (orientation: landscape) and (min-width: 640px) {
   #kc-header-wrapper.nna-brand, #kc-header-wrapper.nna-brand * { text-align: left !important; }
   .nna-panel #kc-info, .nna-panel #kc-info-wrapper, .nna-panel #kc-form-options, .nna-panel .instruction { text-align: left; }
+}
+
+/* The globe video as a disc (2026-11-11): a square as big as the box allows, centred, cut to the globe's circle
+   (the disc fills 96 % of the recording) – no white square around it, also where mix-blend-mode does not apply. */
+.nna-globe video {
+  inset: auto; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); object-fit: cover;
+  clip-path: circle(47.6% at 50% 50%); border-radius: 50%;
 }
