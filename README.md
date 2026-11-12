@@ -27,10 +27,13 @@ Official Keycloak image plus our realm settings (realm `nna`). Later also the Si
 ## Realm `team` – the team's VPN login (prod only, since 2026-11-12)
 Headscale (headscale.test.neb-network.app) signs team members in here instead of handing out keys.
 - No sign-up, no Google/Apple; accounts only from `realms/team-users.json` (setup.sh creates missing ones on every start
-  and keeps the group `vpn` equal to that list). Username = VPN name = personal environment (NNA-deployment
-  `k8s/personal.json`). Admins (nigel) never get an account here – they stay on Headscale keys.
-- Password (via "Forgot password?" on first use) + authenticator app code, required. No account console, so nobody can
-  remove their code or rename themselves.
+  and keeps the group `vpn` and the role `superadmin` equal to that list). Username = VPN name = personal environment
+  (NNA-deployment `k8s/personal.json`).
+- Login (flow `team-browser`): password, then **superadmins (nigel) a passkey** (Face ID / fingerprint, registered on the
+  first login), everyone else an authenticator app code. "Forgot password?" (flow `team-reset`): mail link + new password +
+  the same second factor – the reset never removes a code or passkey. Lost device → an admin deletes the credential in
+  the admin console (VPN only). No account console, so nobody can remove their second factor or rename themselves.
+  Flows are built once by setup.sh; to change one, give it a new alias and bind that.
 - Client `headscale` (confidential): secret = cluster secret `headscale-oidc` (key `HEADSCALE_OIDC_CLIENT_SECRET`), the same
   value in nna-prod (Keycloak) and nna-test (Headscale); created by an admin, never in git.
 - Add/remove a person: edit `team-users.json`, run `python3 realms/make_realms.py`, also add/remove their e-mail in

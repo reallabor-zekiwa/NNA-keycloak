@@ -23,6 +23,10 @@
   "otpPolicyAlgorithm": "HmacSHA1",
   "otpPolicyDigits": 6,
   "otpPolicyPeriod": 30,
+  "webAuthnPolicyRpEntityName": "NEB Network Team VPN",
+  "webAuthnPolicyUserVerificationRequirement": "required",
+  "webAuthnPolicyRequireResidentKey": "No",
+  "webAuthnPolicyAttestationConveyancePreference": "not specified",
   "sslRequired": "external",
   "internationalizationEnabled": true,
   "supportedLocales": [
@@ -48,6 +52,10 @@
       {
         "name": "default-roles-team",
         "composite": false
+      },
+      {
+        "name": "superadmin",
+        "description": "VPN admin \u2013 login needs a passkey (setup.sh flow 'team browser')"
       }
     ]
   },
@@ -66,8 +74,17 @@
       "name": "Configure OTP",
       "providerId": "CONFIGURE_TOTP",
       "enabled": true,
-      "defaultAction": true,
+      "defaultAction": false,
       "priority": 10,
+      "config": {}
+    },
+    {
+      "alias": "webauthn-register",
+      "name": "Webauthn Register",
+      "providerId": "webauthn-register",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 20,
       "config": {}
     },
     {

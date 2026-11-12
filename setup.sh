@@ -109,12 +109,76 @@ if [ -n "${KEYCLOAK_BACKEND_SECRET:-}" ]; then
 fi
 
 # 7. realm "team" – the team's VPN login (prod only, since 2026-11-12). Headscale signs people in here (client
-#    "headscale", secret = cluster secret headscale-oidc, the same value Headscale gets in nna-test). Accounts and the
-#    group "vpn" follow realms/team-users.json (generated team-users.tsv); admins (nigel) never get an account here –
-#    they stay on Headscale keys, so this realm can never open an admin's access.
+#    "headscale", secret = cluster secret headscale-oidc, the same value Headscale gets in nna-test). Accounts, the
+#    group "vpn" and the role "superadmin" follow realms/team-users.json (generated team-users.tsv).
+#    Login (flow team-browser): password, then superadmins a PASSKEY, everyone else an authenticator code.
+#    Forgot password (flow team-reset): mail link, new password, then the SAME second factor – a mailbox alone never
+#    gets anyone in, and the reset never removes a code or passkey (lost device → an admin removes it in the console).
 TEAM_SETTINGS="/opt/nna/realms/team-${ENV_NAME}-settings.json"
 if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2>&1; then
   $KCADM update realms/team -f "$TEAM_SETTINGS" && echo "setup.sh: team realm settings applied"
+  # role superadmin + required actions (realm may predate them – import only runs once)
+  $KCADM get roles/superadmin -r team >/dev/null 2>&1 || $KCADM create roles -r team -s name=superadmin \
+    -s 'description=VPN admin – login needs a passkey' >/dev/null
+  for RA in CONFIGURE_TOTP webauthn-register; do
+    $KCADM update "authentication/required-actions/$RA" -r team -s enabled=true -s defaultAction=false >/dev/null 2>&1 \
+      || $KCADM create authentication/register-required-action -r team -s providerId="$RA" -s name="$RA" >/dev/null 2>&1
+  done
+  # flows, built once (an existing flow is left alone; to change it: new alias, e.g. team-browser-2, and bind that)
+  team_flow() {   # $1 alias, $2 description – top-level flow
+    $KCADM get authentication/flows -r team --fields alias --format csv --noquotes 2>/dev/null | grep -qx "$1" \
+      || $KCADM create authentication/flows -r team -s alias="$1" -s providerId=basic-flow -s topLevel=true \
+           -s builtIn=false -s description="$2" >/dev/null
+  }
+  team_sub() {    # $1 parent alias, $2 new sub-flow alias
+    $KCADM create "authentication/flows/$1/executions/flow" -r team \
+      -b "{\"alias\":\"$2\",\"type\":\"basic-flow\",\"provider\":\"registration-page-form\",\"description\":\"$2\"}" >/dev/null
+  }
+  team_step() {   # $1 flow alias, $2 authenticator provider
+    $KCADM create "authentication/flows/$1/executions/execution" -r team -b "{\"provider\":\"$2\"}" >/dev/null
+  }
+  team_req() {    # $1 top flow, $2 display name or provider id, $3 requirement, [$4 nth match]
+    local ID
+    ID=$($KCADM get "authentication/flows/$1/executions" -r team --fields id,displayName,providerId --format csv --noquotes 2>/dev/null \
+         | awk -F, -v k="$2" '$2==k || $3==k {print $1}' | sed -n "${4:-1}p")
+    [ -n "$ID" ] && $KCADM update "authentication/flows/$1/executions" -r team -b "{\"id\":\"$ID\",\"requirement\":\"$3\"}" >/dev/null
+  }
+  team_role_cond() {   # $1 top flow, $2 nth conditional-user-role, $3 negate true|false, $4 config alias
+    local ID
+    ID=$($KCADM get "authentication/flows/$1/executions" -r team --fields id,providerId --format csv --noquotes 2>/dev/null \
+         | awk -F, '$2=="conditional-user-role" {print $1}' | sed -n "${2}p")
+    [ -n "$ID" ] && $KCADM create "authentication/executions/$ID/config" -r team \
+      -b "{\"alias\":\"$4\",\"config\":{\"condUserRole\":\"superadmin\",\"negate\":\"$3\"}}" >/dev/null
+    $KCADM update "authentication/flows/$1/executions" -r team -b "{\"id\":\"$ID\",\"requirement\":\"REQUIRED\"}" >/dev/null
+  }
+  if ! $KCADM get authentication/flows -r team --fields alias --format csv --noquotes 2>/dev/null | grep -qx team-browser; then
+    team_flow team-browser "Team VPN login: password + passkey (superadmin) or authenticator code"
+    team_step team-browser auth-cookie;                      team_req team-browser auth-cookie ALTERNATIVE
+    team_sub  team-browser team-forms;                       team_req team-browser team-forms ALTERNATIVE
+    team_step team-forms auth-username-password-form;        team_req team-browser auth-username-password-form REQUIRED
+    team_sub  team-forms team-passkey;                       team_req team-browser team-passkey CONDITIONAL
+    team_step team-passkey conditional-user-role;            team_role_cond team-browser 1 false team-browser-is-superadmin
+    team_step team-passkey webauthn-authenticator;           team_req team-browser webauthn-authenticator REQUIRED
+    team_sub  team-forms team-code;                          team_req team-browser team-code CONDITIONAL
+    team_step team-code conditional-user-role;               team_role_cond team-browser 2 true team-browser-not-superadmin
+    team_step team-code auth-otp-form;                       team_req team-browser auth-otp-form REQUIRED
+    echo "setup.sh: team flow team-browser built"
+  fi
+  if ! $KCADM get authentication/flows -r team --fields alias --format csv --noquotes 2>/dev/null | grep -qx team-reset; then
+    team_flow team-reset "Team VPN forgot password: mail link + new password + the same second factor"
+    team_step team-reset reset-credentials-choose-user;      team_req team-reset reset-credentials-choose-user REQUIRED
+    team_step team-reset reset-credential-email;             team_req team-reset reset-credential-email REQUIRED
+    team_step team-reset reset-password;                     team_req team-reset reset-password REQUIRED
+    team_sub  team-reset team-reset-passkey;                 team_req team-reset team-reset-passkey CONDITIONAL
+    team_step team-reset-passkey conditional-user-role;      team_role_cond team-reset 1 false team-reset-is-superadmin
+    team_step team-reset-passkey webauthn-authenticator;     team_req team-reset webauthn-authenticator REQUIRED
+    team_sub  team-reset team-reset-code;                    team_req team-reset team-reset-code CONDITIONAL
+    team_step team-reset-code conditional-user-role;         team_role_cond team-reset 2 true team-reset-not-superadmin
+    team_step team-reset-code auth-otp-form;                 team_req team-reset auth-otp-form REQUIRED
+    echo "setup.sh: team flow team-reset built"
+  fi
+  $KCADM update realms/team -s browserFlow=team-browser -s resetCredentialsFlow=team-reset >/dev/null \
+    && echo "setup.sh: team flows bound"
   GID=$($KCADM get groups -r team --fields id,name --format csv --noquotes 2>/dev/null | grep ',vpn$' | cut -d, -f1 | head -n 1)
   if [ -z "$GID" ]; then
     $KCADM create groups -r team -s name=vpn >/dev/null
@@ -143,14 +207,15 @@ if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2
     echo "setup.sh: team client headscale ready"
   fi
   WANT=" "
-  while IFS=$'\t' read -r U EMAIL FIRST LAST; do
+  SUPER=" "
+  while IFS=$'\t' read -r U EMAIL FIRST LAST SA; do
     [ -n "$U" ] || continue
-    if [ "$U" = nigel ]; then echo "setup.sh: refusing team account '$U' (admin)" >&2; continue; fi
+    if [ "$SA" = 1 ]; then RA='["webauthn-register"]'; else RA='["CONFIGURE_TOTP"]'; fi
     TID=$($KCADM get users -r team -q username="$U" -q exact=true --fields id --format csv --noquotes 2>/dev/null | head -n 1)
     if [ -z "$TID" ]; then
       # no password: the person uses "Forgot password?" on the login page, then sets up an authenticator app
       $KCADM create users -r team -s username="$U" -s email="$EMAIL" -s firstName="$FIRST" -s lastName="$LAST" \
-        -s enabled=true -s emailVerified=true -s 'requiredActions=["CONFIGURE_TOTP"]' >/dev/null \
+        -s enabled=true -s emailVerified=true -s "requiredActions=$RA" >/dev/null \
         && echo "setup.sh: team account $U created"
       TID=$($KCADM get users -r team -q username="$U" -q exact=true --fields id --format csv --noquotes 2>/dev/null | head -n 1)
     else
@@ -159,7 +224,15 @@ if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2
     [ -n "$TID" ] && [ -n "$GID" ] || continue
     $KCADM update "users/$TID/groups/$GID" -r team -s realm=team -s userId="$TID" -s groupId="$GID" -n >/dev/null
     WANT="$WANT$TID "
+    if [ "$SA" = 1 ]; then
+      $KCADM add-roles -r team --uid "$TID" --rolename superadmin >/dev/null && SUPER="$SUPER$U "
+    fi
   done < /opt/nna/realms/team-users.tsv
+  # superadmin only for who is marked in the list
+  for M in $($KCADM get roles/superadmin/users -r team --fields username --format csv --noquotes 2>/dev/null); do
+    case "$SUPER" in *" $M "*) ;; *) $KCADM remove-roles -r team --uusername "$M" --rolename superadmin >/dev/null \
+      && echo "setup.sh: removed superadmin from $M" ;; esac
+  done
   # whoever is in "vpn" but no longer in the list loses VPN logins
   if [ -n "$GID" ]; then
     for M in $($KCADM get "groups/$GID/members" -r team --fields id --format csv --noquotes 2>/dev/null); do
