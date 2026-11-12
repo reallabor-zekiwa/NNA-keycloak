@@ -107,4 +107,65 @@ if [ -n "${KEYCLOAK_BACKEND_SECRET:-}" ]; then
   $KCADM add-roles -r nna --uusername service-account-nna-backend --cclientid realm-management \
     --rolename manage-users --rolename view-users >/dev/null && echo "setup.sh: service client nna-backend ready"
 fi
+
+# 7. realm "team" – the team's VPN login (prod only, since 2026-11-12). Headscale signs people in here (client
+#    "headscale", secret = cluster secret headscale-oidc, the same value Headscale gets in nna-test). Accounts and the
+#    group "vpn" follow realms/team-users.json (generated team-users.tsv); admins (nigel) never get an account here –
+#    they stay on Headscale keys, so this realm can never open an admin's access.
+TEAM_SETTINGS="/opt/nna/realms/team-${ENV_NAME}-settings.json"
+if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2>&1; then
+  $KCADM update realms/team -f "$TEAM_SETTINGS" && echo "setup.sh: team realm settings applied"
+  GID=$($KCADM get groups -r team --fields id,name --format csv --noquotes 2>/dev/null | grep ',vpn$' | cut -d, -f1 | head -n 1)
+  if [ -z "$GID" ]; then
+    $KCADM create groups -r team -s name=vpn >/dev/null
+    GID=$($KCADM get groups -r team --fields id,name --format csv --noquotes 2>/dev/null | grep ',vpn$' | cut -d, -f1 | head -n 1)
+  fi
+  if [ -n "${HEADSCALE_OIDC_CLIENT_SECRET:-}" ]; then
+    HS_SECRET="${HEADSCALE_OIDC_CLIENT_SECRET//[$'\r\n\t ']/}"
+    HS_ARGS=(-s name="Headscale (team VPN)" -s enabled=true -s publicClient=false -s standardFlowEnabled=true
+             -s directAccessGrantsEnabled=false -s implicitFlowEnabled=false -s serviceAccountsEnabled=false
+             -s clientAuthenticatorType=client-secret -s "secret=$HS_SECRET" -s consentRequired=false
+             -s 'redirectUris=["https://headscale.test.neb-network.app/oidc/callback"]' -s 'webOrigins=[]'
+             -s 'attributes."pkce.code.challenge.method"=S256')
+    CID=$($KCADM get clients -r team -q clientId=headscale --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    if [ -z "$CID" ]; then
+      $KCADM create clients -r team -s clientId=headscale "${HS_ARGS[@]}" >/dev/null
+      CID=$($KCADM get clients -r team -q clientId=headscale --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    else
+      $KCADM update "clients/$CID" -r team "${HS_ARGS[@]}" >/dev/null
+    fi
+    # group names in the token (claim "groups") – Headscale only lets members of "vpn" in (oidc.allowed_groups)
+    if ! $KCADM get "clients/$CID/protocol-mappers/models" -r team --fields name --format csv --noquotes 2>/dev/null | grep -q '^groups$'; then
+      $KCADM create "clients/$CID/protocol-mappers/models" -r team -s name=groups -s protocol=openid-connect \
+        -s protocolMapper=oidc-group-membership-mapper -s 'config."claim.name"=groups' -s 'config."full.path"=false' \
+        -s 'config."id.token.claim"=true' -s 'config."access.token.claim"=true' -s 'config."userinfo.token.claim"=true' >/dev/null
+    fi
+    echo "setup.sh: team client headscale ready"
+  fi
+  WANT=" "
+  while IFS=$'\t' read -r U EMAIL FIRST LAST; do
+    [ -n "$U" ] || continue
+    if [ "$U" = nigel ]; then echo "setup.sh: refusing team account '$U' (admin)" >&2; continue; fi
+    TID=$($KCADM get users -r team -q username="$U" -q exact=true --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    if [ -z "$TID" ]; then
+      # no password: the person uses "Forgot password?" on the login page, then sets up an authenticator app
+      $KCADM create users -r team -s username="$U" -s email="$EMAIL" -s firstName="$FIRST" -s lastName="$LAST" \
+        -s enabled=true -s emailVerified=true -s 'requiredActions=["CONFIGURE_TOTP"]' >/dev/null \
+        && echo "setup.sh: team account $U created"
+      TID=$($KCADM get users -r team -q username="$U" -q exact=true --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    else
+      $KCADM update "users/$TID" -r team -s email="$EMAIL" -s emailVerified=true >/dev/null
+    fi
+    [ -n "$TID" ] && [ -n "$GID" ] || continue
+    $KCADM update "users/$TID/groups/$GID" -r team -s realm=team -s userId="$TID" -s groupId="$GID" -n >/dev/null
+    WANT="$WANT$TID "
+  done < /opt/nna/realms/team-users.tsv
+  # whoever is in "vpn" but no longer in the list loses VPN logins
+  if [ -n "$GID" ]; then
+    for M in $($KCADM get "groups/$GID/members" -r team --fields id --format csv --noquotes 2>/dev/null); do
+      case "$WANT" in *" $M "*) ;; *) $KCADM delete "users/$M/groups/$GID" -r team >/dev/null && echo "setup.sh: removed $M from vpn" ;; esac
+    done
+  fi
+  echo "setup.sh: team accounts in line with team-users.json"
+fi
 echo "setup.sh: done"

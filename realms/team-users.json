@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "Team VPN accounts (realm 'team', prod). setup.sh creates missing ones on every Keycloak start and keeps the group",
+    "'vpn' equal to this list: remove a person here = no new VPN logins for them after the next start.",
+    "username = VPN name = their personal environment in NNA-deployment k8s/personal.json (must match exactly).",
+    "Never add an admin name (nigel): admins stay on Headscale keys – setup.sh refuses it.",
+    "New accounts have no password: the person uses 'Forgot password?' on the login page (mail to the address below),",
+    "then sets up an authenticator app (required)."
+  ],
+  "admins_never_here": ["nigel"],
+  "users": [
+    {"username": "siamak",   "email": "siamak.roudyani@hs-anhalt.de",   "firstName": "Siamak",   "lastName": "Roudyani"},
+    {"username": "vitalina", "email": "vitalina.stepnikova@hs-anhalt.de", "firstName": "Vitalina", "lastName": "Stepnikova"},
+    {"username": "yigit",    "email": "yigit.akyol@hs-anhalt.de",       "firstName": "Yigit",    "lastName": "Akyol"},
+    {"username": "hermann",  "email": "hermann.kloeckner@hs-anhalt.de", "firstName": "Hermann",  "lastName": "Klöckner"},
+    {"username": "jennifer", "email": "jennifer.harthun@hs-anhalt.de",  "firstName": "Jennifer", "lastName": "Harthun"}
+  ]
+}
