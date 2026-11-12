@@ -93,8 +93,8 @@ def realm(env):
 # ---------------------------------------------------------------------------------------------------------------
 # Realm "team" (prod only, since 2026-11-12): the team's VPN login. Headscale (headscale.test.neb-network.app) signs
 # people in here instead of handing out keys. Separate from "nna" on purpose: no sign-up, no Google/Apple, accounts
-# only from realms/team-users.json (setup.sh), password + authenticator code required, users cannot edit their
-# account (no account console roles) – so they cannot remove their code or rename themselves.
+# only from realms/team-users.json (setup.sh), password + authenticator code required (superadmins: password + passkey
+# instead), users cannot edit their account (no account console roles) – so they cannot remove it or rename themselves.
 # The username IS the VPN name (= Headscale user = personal environment in NNA-deployment k8s/personal.json).
 TEAM_HEADSCALE = "https://headscale.test.neb-network.app"
 
@@ -112,6 +112,9 @@ def team_realm():
         "maxFailureWaitSeconds": 900, "maxDeltaTimeSeconds": 43200, "permanentLockout": False,
         "passwordPolicy": "length(12) and notUsername and notEmail",
         "otpPolicyType": "totp", "otpPolicyAlgorithm": "HmacSHA1", "otpPolicyDigits": 6, "otpPolicyPeriod": 30,
+        # passkey (WebAuthn) for superadmins: Face ID / fingerprint / device PIN required, bound to auth.neb-network.app
+        "webAuthnPolicyRpEntityName": "NEB Network Team VPN", "webAuthnPolicyUserVerificationRequirement": "required",
+        "webAuthnPolicyRequireResidentKey": "No", "webAuthnPolicyAttestationConveyancePreference": "not specified",
         "sslRequired": "external",
         "internationalizationEnabled": True, "supportedLocales": ["de", "en"], "defaultLocale": "en",
         "accessTokenLifespan": 300, "ssoSessionIdleTimeout": 1800, "ssoSessionMaxLifespan": 36000,
@@ -119,12 +122,15 @@ def team_realm():
                        "fromDisplayName": "NEB Network · Team VPN", "replyTo": "", "auth": "false", "ssl": "false",
                        "starttls": "false"},
         # no account-console roles: the default role holds nothing a user could use to change their account
-        "roles": {"realm": [{"name": "default-roles-team", "composite": False}]},
+        "roles": {"realm": [{"name": "default-roles-team", "composite": False},
+                            {"name": "superadmin", "description": "VPN admin – login needs a passkey (setup.sh flow 'team browser')"}]},
         "defaultRole": {"name": "default-roles-team", "composite": False},
         "groups": [{"name": "vpn"}],
         "requiredActions": [
             {"alias": "CONFIGURE_TOTP", "name": "Configure OTP", "providerId": "CONFIGURE_TOTP",
-             "enabled": True, "defaultAction": True, "priority": 10, "config": {}},
+             "enabled": True, "defaultAction": False, "priority": 10, "config": {}},
+            {"alias": "webauthn-register", "name": "Webauthn Register", "providerId": "webauthn-register",
+             "enabled": True, "defaultAction": False, "priority": 20, "config": {}},
             {"alias": "UPDATE_PASSWORD", "name": "Update Password", "providerId": "UPDATE_PASSWORD",
              "enabled": True, "defaultAction": False, "priority": 30, "config": {}},
         ],
@@ -152,8 +158,8 @@ if __name__ == "__main__":
     tu = json.loads((here / "team-users.json").read_text())
     rows = []
     for u in tu["users"]:
-        assert u["username"] not in tu["admins_never_here"], f"{u['username']}: admins stay on Headscale keys"
         assert all("\t" not in str(v) and "\n" not in str(v) for v in u.values())
-        rows.append("\t".join([u["username"], u["email"], u.get("firstName", ""), u.get("lastName", "")]))
+        rows.append("\t".join([u["username"], u["email"], u.get("firstName", ""), u.get("lastName", ""),
+                               "1" if u.get("superadmin") else "0"]))
     (here / "team-users.tsv").write_text("\n".join(rows) + "\n")
     print("wrote", here / "team-users.tsv", f"({len(rows)} accounts)")

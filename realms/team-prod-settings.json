@@ -22,6 +22,10 @@
   "otpPolicyAlgorithm": "HmacSHA1",
   "otpPolicyDigits": 6,
   "otpPolicyPeriod": 30,
+  "webAuthnPolicyRpEntityName": "NEB Network Team VPN",
+  "webAuthnPolicyUserVerificationRequirement": "required",
+  "webAuthnPolicyRequireResidentKey": "No",
+  "webAuthnPolicyAttestationConveyancePreference": "not specified",
   "sslRequired": "external",
   "internationalizationEnabled": true,
   "supportedLocales": [
