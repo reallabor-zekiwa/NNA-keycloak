@@ -159,7 +159,12 @@ if __name__ == "__main__":
     rows = []
     for u in tu["users"]:
         assert all("\t" not in str(v) and "\n" not in str(v) for v in u.values())
+        # reset_second_factor_before: ISO time (UTC) – passkeys/codes created before it are removed once
+        reset_ms = 0
+        if u.get("reset_second_factor_before"):
+            from datetime import datetime
+            reset_ms = int(datetime.fromisoformat(u["reset_second_factor_before"].replace("Z", "+00:00")).timestamp() * 1000)
         rows.append("\t".join([u["username"], u["email"], u.get("firstName", ""), u.get("lastName", ""),
-                               "1" if u.get("superadmin") else "0"]))
+                               "1" if u.get("superadmin") else "0", str(reset_ms)]))
     (here / "team-users.tsv").write_text("\n".join(rows) + "\n")
     print("wrote", here / "team-users.tsv", f"({len(rows)} accounts)")
