@@ -5,7 +5,8 @@
     "username = VPN name = their personal environment in NNA-deployment k8s/personal.json (must match exactly).",
     "superadmin: true = VPN admin (all servers, every environment, HSA Work). Login = password + PASSKEY (Face ID/",
     "fingerprint), no code. Everyone else: password + authenticator code. Also add the e-mail to Headscale's oidc.allowed_users.",
-    "New accounts have no password: 'Forgot password?' on the login page (mail to the address below), then the second factor."
+    "New accounts have no password: 'Forgot password?' on the login page (mail to the address below), then the second factor.",
+    "reset_second_factor_before (UTC, e.g. \"2026-11-12T19:47:00Z\"): passkeys/codes made before it are deleted on the next start – for a lost or wrong device."
   ],
   "users": [
     {
@@ -13,7 +14,8 @@
       "email": "nigel.hartman@hs-anhalt.de",
       "firstName": "Nigel",
       "lastName": "Hartman",
-      "superadmin": true
+      "superadmin": true,
+      "reset_second_factor_before": "2026-11-12T19:47:00Z"
     },
     {
       "username": "siamak",

@@ -232,7 +232,7 @@ if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2
   fi
   WANT=" "
   SUPER=" "
-  while IFS=$'\t' read -r U EMAIL FIRST LAST SA; do
+  while IFS=$'\t' read -r U EMAIL FIRST LAST SA RESET_MS; do
     [ -n "$U" ] || continue
     if [ "$SA" = 1 ]; then RA='["webauthn-register"]'; else RA='["CONFIGURE_TOTP"]'; fi
     TID=$($KCADM get users -r team -q username="$U" -q exact=true --fields id --format csv --noquotes 2>/dev/null | head -n 1)
@@ -247,6 +247,20 @@ if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2
     fi
     [ -n "$TID" ] && [ -n "$GID" ] || continue
     $KCADM update "users/$TID/groups/$GID" -r team -s realm=team -s userId="$TID" -s groupId="$GID" -n >/dev/null
+    # second factor reset (lost/wrong device): team-users.json "reset_second_factor_before" → passkeys/codes created
+    # before that moment are deleted once; the next login sets up a new one (credentials made later are kept)
+    if [ -n "${RESET_MS:-}" ] && [ "$RESET_MS" != 0 ]; then
+      NDEL=0
+      while IFS=, read -r CID2 CTYPE CDATE; do
+        case "$CTYPE" in webauthn|otp) ;; *) continue ;; esac
+        [ -n "$CDATE" ] && [ "$CDATE" -lt "$RESET_MS" ] 2>/dev/null || continue
+        $KCADM delete "users/$TID/credentials/$CID2" -r team >/dev/null && NDEL=$((NDEL + 1))
+      done < <($KCADM get "users/$TID/credentials" -r team --fields id,type,createdDate --format csv --noquotes 2>/dev/null)
+      if [ "$NDEL" -gt 0 ]; then
+        $KCADM update "users/$TID" -r team -s "requiredActions=$RA" >/dev/null
+        echo "setup.sh: team account $U: $NDEL old second factor(s) removed – set up again on next login"
+      fi
+    fi
     WANT="$WANT$TID "
     if [ "$SA" = 1 ]; then
       $KCADM add-roles -r team --uid "$TID" --rolename superadmin >/dev/null && SUPER="$SUPER$U "
