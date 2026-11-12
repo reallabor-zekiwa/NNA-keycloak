@@ -12,6 +12,9 @@ if [ ! -f "$SRC" ]; then
 fi
 mkdir -p /opt/keycloak/data/import
 printf '%s' "$(<"$SRC")" > /opt/keycloak/data/import/nna.json      # pure bash copy – the base image is minimal
+# realm "team" (team VPN login, prod only) – imported once like "nna", then kept in line by setup.sh
+TEAM="/opt/nna/realms/team-${ENV_NAME}.json"
+if [ -f "$TEAM" ]; then printf '%s' "$(<"$TEAM")" > /opt/keycloak/data/import/team.json; fi
 
 /opt/keycloak/bin/kc.sh start --optimized --import-realm "$@" &
 KC=$!

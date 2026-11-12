@@ -24,4 +24,16 @@ Official Keycloak image plus our realm settings (realm `nna`). Later also the Si
   NNA-deployment). Google/Apple client secrets are entered in the admin console → Identity providers.
 - **Admin console:** `/admin` on the environment's address (test: VPN only).
 
+## Realm `team` – the team's VPN login (prod only, since 2026-11-12)
+Headscale (headscale.test.neb-network.app) signs team members in here instead of handing out keys.
+- No sign-up, no Google/Apple; accounts only from `realms/team-users.json` (setup.sh creates missing ones on every start
+  and keeps the group `vpn` equal to that list). Username = VPN name = personal environment (NNA-deployment
+  `k8s/personal.json`). Admins (nigel) never get an account here – they stay on Headscale keys.
+- Password (via "Forgot password?" on first use) + authenticator app code, required. No account console, so nobody can
+  remove their code or rename themselves.
+- Client `headscale` (confidential): secret = cluster secret `headscale-oidc` (key `HEADSCALE_OIDC_CLIENT_SECRET`), the same
+  value in nna-prod (Keycloak) and nna-test (Headscale); created by an admin, never in git.
+- Add/remove a person: edit `team-users.json`, run `python3 realms/make_realms.py`, also add/remove their e-mail in
+  Headscale's `oidc.allowed_users` (NNA-deployment), deploy both.
+
 Deploy: NNA-deployment → Actions → "Deploy NNA Services" → service `keycloak`.
