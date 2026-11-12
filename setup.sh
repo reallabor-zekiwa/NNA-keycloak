@@ -137,48 +137,72 @@ if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2
   team_step() {   # $1 flow alias, $2 authenticator provider
     $KCADM create "authentication/flows/$1/executions/execution" -r team -b "{\"provider\":\"$2\"}" >/dev/null
   }
+  # NOTE: the Keycloak image has bash, grep, cut and head – no awk/sed (2026-11-12: awk made the first flows empty)
+  team_nth_id() {  # $1 top flow, $2 display name or provider id, $3 nth match → execution id
+    local id dn pid n=0
+    while IFS=, read -r id dn pid; do
+      if [ "$dn" = "$2" ] || [ "$pid" = "$2" ]; then
+        n=$((n + 1)); if [ "$n" -eq "${3:-1}" ]; then printf '%s' "$id"; return 0; fi
+      fi
+    done < <($KCADM get "authentication/flows/$1/executions" -r team --fields id,displayName,providerId --format csv --noquotes 2>/dev/null)
+    return 1
+  }
   team_req() {    # $1 top flow, $2 display name or provider id, $3 requirement, [$4 nth match]
     local ID
-    ID=$($KCADM get "authentication/flows/$1/executions" -r team --fields id,displayName,providerId --format csv --noquotes 2>/dev/null \
-         | awk -F, -v k="$2" '$2==k || $3==k {print $1}' | sed -n "${4:-1}p")
-    [ -n "$ID" ] && $KCADM update "authentication/flows/$1/executions" -r team -b "{\"id\":\"$ID\",\"requirement\":\"$3\"}" >/dev/null
+    ID=$(team_nth_id "$1" "$2" "${4:-1}") || { echo "setup.sh: team flow $1: step $2 not found" >&2; return 1; }
+    $KCADM update "authentication/flows/$1/executions" -r team -b "{\"id\":\"$ID\",\"requirement\":\"$3\"}" >/dev/null
   }
   team_role_cond() {   # $1 top flow, $2 nth conditional-user-role, $3 negate true|false, $4 config alias
     local ID
-    ID=$($KCADM get "authentication/flows/$1/executions" -r team --fields id,providerId --format csv --noquotes 2>/dev/null \
-         | awk -F, '$2=="conditional-user-role" {print $1}' | sed -n "${2}p")
-    [ -n "$ID" ] && $KCADM create "authentication/executions/$ID/config" -r team \
+    ID=$(team_nth_id "$1" conditional-user-role "$2") || { echo "setup.sh: team flow $1: role condition $2 not found" >&2; return 1; }
+    $KCADM create "authentication/executions/$ID/config" -r team \
       -b "{\"alias\":\"$4\",\"config\":{\"condUserRole\":\"superadmin\",\"negate\":\"$3\"}}" >/dev/null
     $KCADM update "authentication/flows/$1/executions" -r team -b "{\"id\":\"$ID\",\"requirement\":\"REQUIRED\"}" >/dev/null
   }
-  if ! $KCADM get authentication/flows -r team --fields alias --format csv --noquotes 2>/dev/null | grep -qx team-browser; then
-    team_flow team-browser "Team VPN login: password + passkey (superadmin) or authenticator code"
-    team_step team-browser auth-cookie;                      team_req team-browser auth-cookie ALTERNATIVE
-    team_sub  team-browser team-forms;                       team_req team-browser team-forms ALTERNATIVE
-    team_step team-forms auth-username-password-form;        team_req team-browser auth-username-password-form REQUIRED
-    team_sub  team-forms team-passkey;                       team_req team-browser team-passkey CONDITIONAL
-    team_step team-passkey conditional-user-role;            team_role_cond team-browser 1 false team-browser-is-superadmin
-    team_step team-passkey webauthn-authenticator;           team_req team-browser webauthn-authenticator REQUIRED
-    team_sub  team-forms team-code;                          team_req team-browser team-code CONDITIONAL
-    team_step team-code conditional-user-role;               team_role_cond team-browser 2 true team-browser-not-superadmin
-    team_step team-code auth-otp-form;                       team_req team-browser auth-otp-form REQUIRED
-    echo "setup.sh: team flow team-browser built"
+  team_has_flow() { $KCADM get authentication/flows -r team --fields alias --format csv --noquotes 2>/dev/null | grep -qx "$1"; }
+  team_count_req() {   # $1 top flow → number of REQUIRED steps
+    $KCADM get "authentication/flows/$1/executions" -r team --fields requirement --format csv --noquotes 2>/dev/null | grep -cx REQUIRED
+  }
+  # version 2 (2026-11-12): version 1 (team-browser/team-reset) was built without awk → every step disabled
+  B=team-browser-2; RS=team-reset-2
+  if ! team_has_flow "$B"; then
+    team_flow "$B" "Team VPN login: password + passkey (superadmin) or authenticator code"
+    team_step "$B" auth-cookie;                          team_req "$B" auth-cookie ALTERNATIVE
+    team_sub  "$B" team-forms-2;                         team_req "$B" team-forms-2 ALTERNATIVE
+    team_step team-forms-2 auth-username-password-form;  team_req "$B" auth-username-password-form REQUIRED
+    team_sub  team-forms-2 team-passkey-2;               team_req "$B" team-passkey-2 CONDITIONAL
+    team_step team-passkey-2 conditional-user-role;      team_role_cond "$B" 1 false team-browser-2-is-superadmin
+    team_step team-passkey-2 webauthn-authenticator;     team_req "$B" webauthn-authenticator REQUIRED
+    team_sub  team-forms-2 team-code-2;                  team_req "$B" team-code-2 CONDITIONAL
+    team_step team-code-2 conditional-user-role;         team_role_cond "$B" 2 true team-browser-2-not-superadmin
+    team_step team-code-2 auth-otp-form;                 team_req "$B" auth-otp-form REQUIRED
+    echo "setup.sh: team flow $B built"
   fi
-  if ! $KCADM get authentication/flows -r team --fields alias --format csv --noquotes 2>/dev/null | grep -qx team-reset; then
-    team_flow team-reset "Team VPN forgot password: mail link + new password + the same second factor"
-    team_step team-reset reset-credentials-choose-user;      team_req team-reset reset-credentials-choose-user REQUIRED
-    team_step team-reset reset-credential-email;             team_req team-reset reset-credential-email REQUIRED
-    team_step team-reset reset-password;                     team_req team-reset reset-password REQUIRED
-    team_sub  team-reset team-reset-passkey;                 team_req team-reset team-reset-passkey CONDITIONAL
-    team_step team-reset-passkey conditional-user-role;      team_role_cond team-reset 1 false team-reset-is-superadmin
-    team_step team-reset-passkey webauthn-authenticator;     team_req team-reset webauthn-authenticator REQUIRED
-    team_sub  team-reset team-reset-code;                    team_req team-reset team-reset-code CONDITIONAL
-    team_step team-reset-code conditional-user-role;         team_role_cond team-reset 2 true team-reset-not-superadmin
-    team_step team-reset-code auth-otp-form;                 team_req team-reset auth-otp-form REQUIRED
-    echo "setup.sh: team flow team-reset built"
+  if ! team_has_flow "$RS"; then
+    team_flow "$RS" "Team VPN forgot password: mail link + new password + the same second factor"
+    team_step "$RS" reset-credentials-choose-user;       team_req "$RS" reset-credentials-choose-user REQUIRED
+    team_step "$RS" reset-credential-email;              team_req "$RS" reset-credential-email REQUIRED
+    team_step "$RS" reset-password;                      team_req "$RS" reset-password REQUIRED
+    team_sub  "$RS" team-reset-passkey-2;                team_req "$RS" team-reset-passkey-2 CONDITIONAL
+    team_step team-reset-passkey-2 conditional-user-role; team_role_cond "$RS" 1 false team-reset-2-is-superadmin
+    team_step team-reset-passkey-2 webauthn-authenticator; team_req "$RS" webauthn-authenticator REQUIRED
+    team_sub  "$RS" team-reset-code-2;                   team_req "$RS" team-reset-code-2 CONDITIONAL
+    team_step team-reset-code-2 conditional-user-role;   team_role_cond "$RS" 2 true team-reset-2-not-superadmin
+    team_step team-reset-code-2 auth-otp-form;           team_req "$RS" auth-otp-form REQUIRED
+    echo "setup.sh: team flow $RS built"
   fi
-  $KCADM update realms/team -s browserFlow=team-browser -s resetCredentialsFlow=team-reset >/dev/null \
-    && echo "setup.sh: team flows bound"
+  # bind only flows that are complete (login: password, 2 role conditions, passkey, code = 5 REQUIRED; reset: 3 more = 7);
+  # otherwise fall back to Keycloak's own flows (they still ask for the code) and say so
+  if [ "$(team_count_req "$B")" -ge 5 ] && [ "$(team_count_req "$RS")" -ge 7 ]; then
+    $KCADM update realms/team -s browserFlow="$B" -s resetCredentialsFlow="$RS" >/dev/null && echo "setup.sh: team flows $B + $RS bound"
+    for OLD in team-browser team-reset; do   # version 1, never usable
+      OID=$($KCADM get authentication/flows -r team --fields id,alias --format csv --noquotes 2>/dev/null | grep ",$OLD\$" | cut -d, -f1 | head -n 1)
+      [ -n "$OID" ] && $KCADM delete "authentication/flows/$OID" -r team >/dev/null 2>&1 && echo "setup.sh: removed old flow $OLD"
+    done
+  else
+    $KCADM update realms/team -s browserFlow=browser -s "resetCredentialsFlow=reset credentials" >/dev/null
+    echo "setup.sh: team flows INCOMPLETE ($B: $(team_count_req "$B"), $RS: $(team_count_req "$RS") required) – Keycloak's own flows bound" >&2
+  fi
   GID=$($KCADM get groups -r team --fields id,name --format csv --noquotes 2>/dev/null | grep ',vpn$' | cut -d, -f1 | head -n 1)
   if [ -z "$GID" ]; then
     $KCADM create groups -r team -s name=vpn >/dev/null
