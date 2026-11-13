@@ -36,7 +36,8 @@
     "from": "noreply-test@neb-network.app",
     "fromDisplayName": "NEB Network (Test)",
     "replyTo": "",
-    "auth": "false",
+    "auth": "true",
+    "user": "keycloak-test@neb-network.app",
     "ssl": "false",
     "starttls": "false"
   },

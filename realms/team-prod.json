@@ -1,0 +1,113 @@
+{
+  "realm": "team",
+  "enabled": true,
+  "displayName": "NEB Network \u00b7 Team VPN",
+  "displayNameHtml": "<span class=\"nna-kicker\">Team VPN</span>NEB Network",
+  "loginTheme": "nna",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "permanentLockout": false,
+  "passwordPolicy": "length(12) and notUsername and notEmail",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "webAuthnPolicyRpEntityName": "NEB Network Team VPN",
+  "webAuthnPolicyUserVerificationRequirement": "required",
+  "webAuthnPolicyRequireResidentKey": "No",
+  "webAuthnPolicyAttestationConveyancePreference": "not specified",
+  "sslRequired": "external",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de",
+    "en"
+  ],
+  "defaultLocale": "en",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "smtpServer": {
+    "host": "mail.nna-prod.svc.cluster.local",
+    "port": "587",
+    "from": "noreply@neb-network.app",
+    "fromDisplayName": "NEB Network \u00b7 Team VPN",
+    "replyTo": "",
+    "auth": "true",
+    "user": "keycloak-prod@neb-network.app",
+    "ssl": "false",
+    "starttls": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "default-roles-team",
+        "composite": false
+      },
+      {
+        "name": "superadmin",
+        "description": "VPN admin \u2013 login needs a passkey (setup.sh flow 'team browser')"
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-team",
+    "composite": false
+  },
+  "groups": [
+    {
+      "name": "vpn"
+    }
+  ],
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    },
+    {
+      "alias": "webauthn-register",
+      "name": "Webauthn Register",
+      "providerId": "webauthn-register",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 20,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    }
+  ],
+  "eventsEnabled": true,
+  "eventsExpiration": 7776000,
+  "adminEventsEnabled": true,
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "SEND_RESET_PASSWORD",
+    "UPDATE_PASSWORD",
+    "UPDATE_TOTP",
+    "REMOVE_TOTP",
+    "CODE_TO_TOKEN_ERROR"
+  ]
+}
