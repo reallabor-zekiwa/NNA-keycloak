@@ -18,6 +18,19 @@ $KCADM get realms/nna --fields realm >/dev/null || { echo "setup.sh: realm nna n
 # 1. realm settings from git (sign-up, verification, reset, brute force, mail, tokens, languages …)
 $KCADM update realms/nna -f "/opt/nna/realms/nna-${ENV_NAME}-settings.json" && echo "setup.sh: realm settings applied"
 
+# 1b. mail login (since 2026-11-13): the mail service only relays for its SASL users, and only from noreply@… –
+#     the settings file names the user (smtpServer.user), the password comes from the cluster (env MAIL_SMTP_PASSWORD,
+#     never in git). Applied after every settings update, because the settings file carries no password.
+smtp_password() {   # $1 realm
+  if [ -z "${MAIL_SMTP_PASSWORD:-}" ]; then
+    echo "setup.sh: MAIL_SMTP_PASSWORD not set – realm $1 cannot send mail (the mail service needs a login)" >&2
+    return 0
+  fi
+  $KCADM update "realms/$1" --merge -s "smtpServer.password=${MAIL_SMTP_PASSWORD//[$'\r\n\t ']/}" >/dev/null \
+    && echo "setup.sh: mail login set for realm $1"
+}
+smtp_password nna
+
 # 2. every new account may view/manage/delete itself (account client exists only after the realm was created)
 $KCADM add-roles -r nna --rname default-roles-nna --cclientid account \
   --rolename view-profile --rolename manage-account --rolename delete-account >/dev/null 2>&1 \
@@ -117,6 +130,18 @@ fi
 TEAM_SETTINGS="/opt/nna/realms/team-${ENV_NAME}-settings.json"
 if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2>&1; then
   $KCADM update realms/team -f "$TEAM_SETTINGS" && echo "setup.sh: team realm settings applied"
+  smtp_password team
+  # client "nna-admin" (since 2026-11-13): the admin panels sign in with the team account (realms/team-admin-client.json,
+  # incl. the "groups" claim – auth-service only lets members of "vpn" in). Re-applied on every start.
+  ADMIN_CLIENT=/opt/nna/realms/team-admin-client.json
+  if [ -f "$ADMIN_CLIENT" ]; then
+    CID=$($KCADM get clients -r team -q clientId=nna-admin --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    if [ -z "$CID" ]; then
+      $KCADM create clients -r team -f "$ADMIN_CLIENT" >/dev/null && echo "setup.sh: team client nna-admin created"
+    else
+      $KCADM update "clients/$CID" -r team -f "$ADMIN_CLIENT" >/dev/null && echo "setup.sh: team client nna-admin updated"
+    fi
+  fi
   # role superadmin + required actions (realm may predate them – import only runs once)
   $KCADM get roles/superadmin -r team >/dev/null 2>&1 || $KCADM create roles -r team -s name=superadmin \
     -s 'description=VPN admin – login needs a passkey' >/dev/null

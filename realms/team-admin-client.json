@@ -1,0 +1,50 @@
+{
+  "clientId": "nna-admin",
+  "name": "NEB Network Admin (team login)",
+  "enabled": true,
+  "publicClient": true,
+  "protocol": "openid-connect",
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "implicitFlowEnabled": false,
+  "serviceAccountsEnabled": false,
+  "consentRequired": false,
+  "redirectUris": [
+    "https://admin.neb-network.app/*",
+    "https://admin.test.neb-network.app/*",
+    "https://admin-nigel.dev.neb-network.app/*",
+    "https://admin-siamak.dev.neb-network.app/*",
+    "https://admin-vitalina.dev.neb-network.app/*",
+    "https://admin-yigit.dev.neb-network.app/*",
+    "https://admin-hermann.dev.neb-network.app/*"
+  ],
+  "webOrigins": [
+    "https://admin.neb-network.app",
+    "https://admin.test.neb-network.app",
+    "https://admin-nigel.dev.neb-network.app",
+    "https://admin-siamak.dev.neb-network.app",
+    "https://admin-vitalina.dev.neb-network.app",
+    "https://admin-yigit.dev.neb-network.app",
+    "https://admin-hermann.dev.neb-network.app"
+  ],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": "+"
+  },
+  "frontchannelLogout": true,
+  "fullScopeAllowed": false,
+  "protocolMappers": [
+    {
+      "name": "groups",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-group-membership-mapper",
+      "config": {
+        "claim.name": "groups",
+        "full.path": "false",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "userinfo.token.claim": "true"
+      }
+    }
+  ]
+}

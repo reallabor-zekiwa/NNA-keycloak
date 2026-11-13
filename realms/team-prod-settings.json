@@ -42,7 +42,8 @@
     "from": "noreply@neb-network.app",
     "fromDisplayName": "NEB Network \u00b7 Team VPN",
     "replyTo": "",
-    "auth": "false",
+    "auth": "true",
+    "user": "keycloak-prod@neb-network.app",
     "ssl": "false",
     "starttls": "false"
   },
