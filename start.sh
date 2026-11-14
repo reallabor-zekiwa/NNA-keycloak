@@ -15,6 +15,9 @@ printf '%s' "$(<"$SRC")" > /opt/keycloak/data/import/nna.json      # pure bash c
 # realm "team" (team VPN login, prod only) – imported once like "nna", then kept in line by setup.sh
 TEAM="/opt/nna/realms/team-${ENV_NAME}.json"
 if [ -f "$TEAM" ]; then printf '%s' "$(<"$TEAM")" > /opt/keycloak/data/import/team.json; fi
+# realm "material" (material library login, since 2026-11-14) – imported once, then kept in line by setup.sh
+MAT="/opt/nna/realms/material-${ENV_NAME}.json"
+if [ -f "$MAT" ]; then printf '%s' "$(<"$MAT")" > /opt/keycloak/data/import/material.json; fi
 
 /opt/keycloak/bin/kc.sh start --optimized --import-realm "$@" &
 KC=$!

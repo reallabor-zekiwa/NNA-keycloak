@@ -44,16 +44,19 @@ $KCADM add-roles -r nna --rname default-roles-nna --cclientid broker --rolename 
 
 # 3. ask for the password on the sign-up form (Keycloak 26 default with e-mail verification: password only after the
 #    confirmation link – two steps for our users). Setting of the "Password Validation" step of the registration flow.
-while IFS=, read -r id provider cfg; do
-  [ "$provider" = "registration-password-action" ] || continue
-  body='{"alias":"nna-registration-password","config":{"always_set_password_on_register_form":"true"}}'
-  if [ -z "$cfg" ]; then
-    $KCADM create "authentication/executions/$id/config" -r nna -b "$body" >/dev/null
-  else
-    $KCADM update "authentication/config/$cfg" -r nna -b "$body" >/dev/null
-  fi && echo "setup.sh: password on the sign-up form"
-done < <($KCADM get authentication/flows/registration/executions -r nna \
-           --fields id,providerId,authenticationConfig --format csv --noquotes 2>/dev/null)
+password_on_signup() {   # $1 realm
+  while IFS=, read -r id provider cfg; do
+    [ "$provider" = "registration-password-action" ] || continue
+    body="{\"alias\":\"$1-registration-password\",\"config\":{\"always_set_password_on_register_form\":\"true\"}}"
+    if [ -z "$cfg" ]; then
+      $KCADM create "authentication/executions/$id/config" -r "$1" -b "$body" >/dev/null
+    else
+      $KCADM update "authentication/config/$cfg" -r "$1" -b "$body" >/dev/null
+    fi && echo "setup.sh: password on the sign-up form ($1)"
+  done < <($KCADM get authentication/flows/registration/executions -r "$1" \
+             --fields id,providerId,authenticationConfig --format csv --noquotes 2>/dev/null)
+}
+password_on_signup nna
 
 # values pasted into a terminal (kubectl --from-file=…=/dev/stdin) end with a newline – strip whitespace
 for v in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET APPLE_SERVICES_ID APPLE_TEAM_ID APPLE_KEY_ID; do
@@ -303,5 +306,28 @@ if [ -f "$TEAM_SETTINGS" ] && $KCADM get realms/team --fields realm >/dev/null 2
     done
   fi
   echo "setup.sh: team accounts in line with team-users.json"
+fi
+# 8. realm "material" – login of the material library (since 2026-11-14, own realm next to "nna"): sign-up with
+#    e-mail confirmation, reset, account deletion; no Google/Apple. Client "material-library" (public, PKCE) from
+#    realms/material-<env>-client.json, re-applied on every start. auth-service (grant_type=material) checks the tokens.
+MAT_SETTINGS="/opt/nna/realms/material-${ENV_NAME}-settings.json"
+MAT_CLIENT="/opt/nna/realms/material-${ENV_NAME}-client.json"
+if [ -f "$MAT_SETTINGS" ] && $KCADM get realms/material --fields realm >/dev/null 2>&1; then
+  $KCADM update realms/material -f "$MAT_SETTINGS" && echo "setup.sh: material realm settings applied"
+  smtp_password material
+  $KCADM add-roles -r material --rname default-roles-material --cclientid account \
+    --rolename view-profile --rolename manage-account --rolename delete-account >/dev/null 2>&1 \
+    && echo "setup.sh: material default roles incl. delete-account"
+  password_on_signup material
+  if [ -f "$MAT_CLIENT" ]; then
+    CID=$($KCADM get clients -r material -q clientId=material-library --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    if [ -z "$CID" ]; then
+      $KCADM create clients -r material -f "$MAT_CLIENT" >/dev/null && echo "setup.sh: material client created"
+    else
+      $KCADM update "clients/$CID" -r material -f "$MAT_CLIENT" >/dev/null && echo "setup.sh: material client updated"
+    fi
+  fi
+elif [ -f "$MAT_SETTINGS" ]; then
+  echo "setup.sh: realm material missing – it is imported on the next start (start.sh)" >&2
 fi
 echo "setup.sh: done"

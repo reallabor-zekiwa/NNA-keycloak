@@ -1,0 +1,24 @@
+{
+  "clientId": "material-library",
+  "name": "Materialbibliothek",
+  "enabled": true,
+  "publicClient": true,
+  "protocol": "openid-connect",
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "implicitFlowEnabled": false,
+  "redirectUris": [
+    "https://materialien.neb-network.app/*",
+    "https://materialien.reallabor-zekiwa-zeitz.de/*"
+  ],
+  "webOrigins": [
+    "https://materialien.neb-network.app",
+    "https://materialien.reallabor-zekiwa-zeitz.de"
+  ],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": "+"
+  },
+  "frontchannelLogout": true,
+  "fullScopeAllowed": true
+}
