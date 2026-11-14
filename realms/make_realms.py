@@ -166,6 +166,43 @@ def team_admin_client():
     }
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# Realm "material" (since 2026-11-14): the login of the material library (materialien.neb-network.app) – its OWN realm,
+# separate from the NNA app's "nna" (Nigel 2026-11-14): own sign-up, confirmation + reset mails, own accounts.
+# The library's frontend signs in here (client "material-library", PKCE) and hands the token to its environment's
+# auth-service (grant_type=material) – that links an existing library account by its confirmed e-mail and answers with
+# the usual tokens, so the material backend stays unchanged. Created on first start (import), settings re-applied by
+# setup.sh on every start like "nna". Test realm also serves the personal environments.
+MATERIAL_HOSTS = {
+    "test": ["https://materialien.test.neb-network.app"]
+            + [f"https://materialien-{p}.dev.neb-network.app" for p in PEOPLE]
+            + ["http://localhost:3000", "http://localhost:5173"],
+    "prod": ["https://materialien.neb-network.app", "https://materialien.reallabor-zekiwa-zeitz.de"],
+}
+
+
+def material_realm(env):
+    e = ENVS[env]
+    name = "Materialbibliothek" + (" (Test)" if env == "test" else "")
+    r = realm(env)
+    r.update({
+        "realm": "material", "displayName": name,
+        "displayNameHtml": '<span class="nna-kicker">' + ("Test · " if env == "test" else "") + 'Materialbibliothek</span>NEB Network',
+        "smtpServer": smtp(e, name),
+        "roles": {"realm": [
+            {"name": "User", "description": "Material library account"},
+            {"name": "offline_access", "description": "${role_offline-access}"},
+            {"name": "uma_authorization", "description": "${role_uma_authorization}"},
+            {"name": "default-roles-material", "composite": True, "composites": {
+                "realm": ["User", "offline_access", "uma_authorization"]}},
+        ]},
+        "defaultRole": {"name": "default-roles-material", "composite": True},
+        "clients": [client("material-library", name, MATERIAL_HOSTS[env])],
+    })
+    r["enabledEventTypes"] = [t for t in r["enabledEventTypes"] if t != "IDENTITY_PROVIDER_LOGIN"]
+    return r
+
+
 if __name__ == "__main__":
     here = Path(__file__).parent
     for env in ENVS:
@@ -175,6 +212,14 @@ if __name__ == "__main__":
         settings = {k: v for k, v in r.items() if k not in ("realm", "roles", "clients", "requiredActions", "defaultRole")}
         (here / f"nna-{env}-settings.json").write_text(json.dumps(settings, indent=2) + "\n")
         print("wrote", here / f"nna-{env}.json", "+ settings")
+    for env in ENVS:   # realm "material" (material library login)
+        r = material_realm(env)
+        (here / f"material-{env}.json").write_text(json.dumps(r, indent=2) + "\n")
+        settings = {k: v for k, v in r.items() if k not in ("realm", "roles", "clients", "requiredActions", "defaultRole")}
+        (here / f"material-{env}-settings.json").write_text(json.dumps(settings, indent=2) + "\n")
+        # the client is re-applied by setup.sh too (an import only runs once; new hosts must reach existing realms)
+        (here / f"material-{env}-client.json").write_text(json.dumps(r["clients"][0], indent=2) + "\n")
+        print("wrote", here / f"material-{env}.json", "+ settings + client")
     # client "nna-admin" in realm team: the admin panels of all environments sign in with the team account
     (here / "team-admin-client.json").write_text(json.dumps(team_admin_client(), indent=2) + "\n")
     print("wrote", here / "team-admin-client.json")

@@ -1,0 +1,143 @@
+{
+  "realm": "material",
+  "enabled": true,
+  "displayName": "Materialbibliothek",
+  "displayNameHtml": "<span class=\"nna-kicker\">Materialbibliothek</span>NEB Network",
+  "loginTheme": "nna",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "permanentLockout": false,
+  "passwordPolicy": "length(8) and notUsername and notEmail",
+  "sslRequired": "external",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de",
+    "en"
+  ],
+  "defaultLocale": "de",
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 7776000,
+  "offlineSessionIdleTimeout": 7776000,
+  "smtpServer": {
+    "host": "mail.nna-prod.svc.cluster.local",
+    "port": "587",
+    "from": "noreply@neb-network.app",
+    "fromDisplayName": "Materialbibliothek",
+    "replyTo": "",
+    "auth": "true",
+    "user": "keycloak-prod@neb-network.app",
+    "ssl": "false",
+    "starttls": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "User",
+        "description": "Material library account"
+      },
+      {
+        "name": "offline_access",
+        "description": "${role_offline-access}"
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma_authorization}"
+      },
+      {
+        "name": "default-roles-material",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "User",
+            "offline_access",
+            "uma_authorization"
+          ]
+        }
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-material",
+    "composite": true
+  },
+  "requiredActions": [
+    {
+      "alias": "delete_account",
+      "name": "Delete Account",
+      "providerId": "delete_account",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 60,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "material-library",
+      "name": "Materialbibliothek",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "https://materialien.neb-network.app/*",
+        "https://materialien.reallabor-zekiwa-zeitz.de/*"
+      ],
+      "webOrigins": [
+        "https://materialien.neb-network.app",
+        "https://materialien.reallabor-zekiwa-zeitz.de"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "frontchannelLogout": true,
+      "fullScopeAllowed": true
+    }
+  ],
+  "eventsEnabled": true,
+  "eventsExpiration": 2592000,
+  "adminEventsEnabled": true,
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "REGISTER",
+    "REGISTER_ERROR",
+    "DELETE_ACCOUNT",
+    "VERIFY_EMAIL",
+    "SEND_RESET_PASSWORD",
+    "UPDATE_PASSWORD"
+  ]
+}
