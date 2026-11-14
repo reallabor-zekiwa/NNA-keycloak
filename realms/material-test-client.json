@@ -1,0 +1,36 @@
+{
+  "clientId": "material-library",
+  "name": "Materialbibliothek (Test)",
+  "enabled": true,
+  "publicClient": true,
+  "protocol": "openid-connect",
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "implicitFlowEnabled": false,
+  "redirectUris": [
+    "https://materialien.test.neb-network.app/*",
+    "https://materialien-nigel.dev.neb-network.app/*",
+    "https://materialien-siamak.dev.neb-network.app/*",
+    "https://materialien-vitalina.dev.neb-network.app/*",
+    "https://materialien-yigit.dev.neb-network.app/*",
+    "https://materialien-hermann.dev.neb-network.app/*",
+    "http://localhost:3000/*",
+    "http://localhost:5173/*"
+  ],
+  "webOrigins": [
+    "https://materialien.test.neb-network.app",
+    "https://materialien-nigel.dev.neb-network.app",
+    "https://materialien-siamak.dev.neb-network.app",
+    "https://materialien-vitalina.dev.neb-network.app",
+    "https://materialien-yigit.dev.neb-network.app",
+    "https://materialien-hermann.dev.neb-network.app",
+    "http://localhost:3000",
+    "http://localhost:5173"
+  ],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": "+"
+  },
+  "frontchannelLogout": true,
+  "fullScopeAllowed": true
+}
