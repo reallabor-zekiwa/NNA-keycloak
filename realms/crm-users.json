@@ -1,0 +1,14 @@
+{
+  "_comment": [
+    "EspoCRM accounts (realm 'crm', test + prod, Nigel 2026-11-16). setup.sh creates missing ones on every Keycloak start",
+    "and disables accounts that are no longer listed. username = EspoCRM user name (lowercase) – the SAME list is in",
+    "NNA-deployment (service crm, CRM_ADMINS): there each one is created as an EspoCRM admin.",
+    "New accounts have no password: 'Forgot password?' on the login page (mail to the address below)."
+  ],
+  "users": [
+    {"username": "nigel", "email": "nigel.hartman@hs-anhalt.de", "firstName": "Nigel", "lastName": "Hartman"},
+    {"username": "martin", "email": "martin.wiesner@hs-anhalt.de", "firstName": "Martin", "lastName": "Wiesner"},
+    {"username": "julian", "email": "julian.zeuner@hs-anhalt.de", "firstName": "Julian", "lastName": "Zeuner"},
+    {"username": "tom", "email": "tom.dietel@geo.uni-halle.de", "firstName": "Tom", "lastName": "Dietel"}
+  ]
+}
