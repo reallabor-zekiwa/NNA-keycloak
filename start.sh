@@ -18,6 +18,9 @@ if [ -f "$TEAM" ]; then printf '%s' "$(<"$TEAM")" > /opt/keycloak/data/import/te
 # realm "material" (material library login, since 2026-11-14) – imported once, then kept in line by setup.sh
 MAT="/opt/nna/realms/material-${ENV_NAME}.json"
 if [ -f "$MAT" ]; then printf '%s' "$(<"$MAT")" > /opt/keycloak/data/import/material.json; fi
+# realm "crm" (EspoCRM login, since 2026-11-16) – imported once, then kept in line by setup.sh
+CRM="/opt/nna/realms/crm-${ENV_NAME}.json"
+if [ -f "$CRM" ]; then printf '%s' "$(<"$CRM")" > /opt/keycloak/data/import/crm.json; fi
 
 /opt/keycloak/bin/kc.sh start --optimized --import-realm "$@" &
 KC=$!

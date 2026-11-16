@@ -1,0 +1,76 @@
+{
+  "realm": "crm",
+  "enabled": true,
+  "displayName": "CRM Materialbibliothek",
+  "displayNameHtml": "<span class=\"nna-kicker\">CRM Materialbibliothek</span>NEB Network",
+  "loginTheme": "nna",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "permanentLockout": false,
+  "passwordPolicy": "length(12) and notUsername and notEmail",
+  "sslRequired": "external",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de",
+    "en"
+  ],
+  "defaultLocale": "de",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 28800,
+  "ssoSessionMaxLifespan": 36000,
+  "smtpServer": {
+    "host": "mail.nna-prod.svc.cluster.local",
+    "port": "587",
+    "from": "noreply@neb-network.app",
+    "fromDisplayName": "CRM Materialbibliothek",
+    "replyTo": "",
+    "auth": "true",
+    "user": "keycloak-prod@neb-network.app",
+    "ssl": "false",
+    "starttls": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "default-roles-crm",
+        "composite": false
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-crm",
+    "composite": false
+  },
+  "requiredActions": [
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    }
+  ],
+  "eventsEnabled": true,
+  "eventsExpiration": 7776000,
+  "adminEventsEnabled": true,
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "SEND_RESET_PASSWORD",
+    "UPDATE_PASSWORD",
+    "CODE_TO_TOKEN_ERROR"
+  ]
+}
