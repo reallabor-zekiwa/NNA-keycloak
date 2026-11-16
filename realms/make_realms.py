@@ -203,6 +203,58 @@ def material_realm(env):
     return r
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# Realm "crm" (since 2026-11-16): the login of EspoCRM (crm.neb-network.app), the material library team's CRM.
+# Its OWN realm (Nigel 2026-11-16): no sign-up, accounts only from realms/crm-users.json (setup.sh creates missing ones
+# and disables accounts that are no longer listed). New accounts have no password: "Forgot password?" on the login
+# page sends the link. Client "espocrm" (confidential, PKCE) – secret = generated cluster secret crm-oidc, the same
+# value EspoCRM gets (NNA-deployment). EspoCRM finds the user by preferred_username (= username here) and only lets
+# in users that already exist there (the same list is created as admins in EspoCRM, NNA-deployment).
+CRM_HOSTS = {"test": "https://crm.test.neb-network.app", "prod": "https://crm.neb-network.app"}
+
+
+def crm_realm(env):
+    e = ENVS[env]
+    name = "CRM Materialbibliothek" + (" (Test)" if env == "test" else "")
+    return {
+        "realm": "crm", "enabled": True, "displayName": name,
+        "displayNameHtml": '<span class="nna-kicker">' + ("Test · " if env == "test" else "") + 'CRM Materialbibliothek</span>NEB Network',
+        "loginTheme": "nna",
+        "registrationAllowed": False, "registrationEmailAsUsername": False, "loginWithEmailAllowed": True,
+        "duplicateEmailsAllowed": False, "verifyEmail": False, "resetPasswordAllowed": True,
+        "rememberMe": False, "editUsernameAllowed": False,
+        "bruteForceProtected": True, "failureFactor": 5, "waitIncrementSeconds": 60,
+        "maxFailureWaitSeconds": 900, "maxDeltaTimeSeconds": 43200, "permanentLockout": False,
+        "passwordPolicy": "length(12) and notUsername and notEmail",
+        "sslRequired": "external",
+        "internationalizationEnabled": True, "supportedLocales": ["de", "en"], "defaultLocale": "de",
+        "accessTokenLifespan": 300, "ssoSessionIdleTimeout": 28800, "ssoSessionMaxLifespan": 36000,
+        "smtpServer": smtp(e, name),
+        # no account-console roles: nobody can rename themselves (the username is the EspoCRM login)
+        "roles": {"realm": [{"name": "default-roles-crm", "composite": False}]},
+        "defaultRole": {"name": "default-roles-crm", "composite": False},
+        "requiredActions": [
+            {"alias": "UPDATE_PASSWORD", "name": "Update Password", "providerId": "UPDATE_PASSWORD",
+             "enabled": True, "defaultAction": False, "priority": 30, "config": {}},
+        ],
+        "eventsEnabled": True, "eventsExpiration": 7776000, "adminEventsEnabled": True,
+        "enabledEventTypes": ["LOGIN", "LOGIN_ERROR", "SEND_RESET_PASSWORD", "UPDATE_PASSWORD", "CODE_TO_TOKEN_ERROR"],
+    }
+
+
+def crm_client(env):
+    site = CRM_HOSTS[env]
+    return {
+        "clientId": "espocrm", "name": "EspoCRM", "enabled": True, "publicClient": False,
+        "clientAuthenticatorType": "client-secret", "protocol": "openid-connect",
+        "standardFlowEnabled": True, "directAccessGrantsEnabled": False, "implicitFlowEnabled": False,
+        "serviceAccountsEnabled": False, "consentRequired": False,
+        "redirectUris": [site + "/oauth-callback.php"], "webOrigins": [site],
+        "attributes": {"pkce.code.challenge.method": "S256", "post.logout.redirect.uris": site + "##" + site + "/*"},
+        "frontchannelLogout": True, "fullScopeAllowed": False,
+    }
+
+
 if __name__ == "__main__":
     here = Path(__file__).parent
     for env in ENVS:
@@ -220,6 +272,21 @@ if __name__ == "__main__":
         # the client is re-applied by setup.sh too (an import only runs once; new hosts must reach existing realms)
         (here / f"material-{env}-client.json").write_text(json.dumps(r["clients"][0], indent=2) + "\n")
         print("wrote", here / f"material-{env}.json", "+ settings + client")
+    for env in ENVS:   # realm "crm" (EspoCRM login)
+        r = crm_realm(env)
+        (here / f"crm-{env}.json").write_text(json.dumps(r, indent=2) + "\n")
+        settings = {k: v for k, v in r.items() if k not in ("realm", "roles", "requiredActions", "defaultRole")}
+        (here / f"crm-{env}-settings.json").write_text(json.dumps(settings, indent=2) + "\n")
+        (here / f"crm-{env}-client.json").write_text(json.dumps(crm_client(env), indent=2) + "\n")
+        print("wrote", here / f"crm-{env}.json", "+ settings + client")
+    cu = json.loads((here / "crm-users.json").read_text())
+    rows = []
+    for u in cu["users"]:
+        assert all("\t" not in str(v) and "\n" not in str(v) for v in u.values())
+        assert u["username"] == u["username"].lower() and " " not in u["username"]   # EspoCRM user names
+        rows.append("\t".join([u["username"], u["email"], u.get("firstName", ""), u.get("lastName", "")]))
+    (here / "crm-users.tsv").write_text("\n".join(rows) + "\n")
+    print("wrote", here / "crm-users.tsv", f"({len(rows)} accounts)")
     # client "nna-admin" in realm team: the admin panels of all environments sign in with the team account
     (here / "team-admin-client.json").write_text(json.dumps(team_admin_client(), indent=2) + "\n")
     print("wrote", here / "team-admin-client.json")

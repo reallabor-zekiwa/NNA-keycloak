@@ -1,0 +1,25 @@
+{
+  "clientId": "espocrm",
+  "name": "EspoCRM",
+  "enabled": true,
+  "publicClient": false,
+  "clientAuthenticatorType": "client-secret",
+  "protocol": "openid-connect",
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "implicitFlowEnabled": false,
+  "serviceAccountsEnabled": false,
+  "consentRequired": false,
+  "redirectUris": [
+    "https://crm.neb-network.app/oauth-callback.php"
+  ],
+  "webOrigins": [
+    "https://crm.neb-network.app"
+  ],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": "https://crm.neb-network.app##https://crm.neb-network.app/*"
+  },
+  "frontchannelLogout": true,
+  "fullScopeAllowed": false
+}
