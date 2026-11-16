@@ -62,3 +62,15 @@ materialien.reallabor-zekiwa-zeitz.de (prod) and materialien.test… + materiali
   links an existing library account by its **confirmed** e-mail (existing users simply sign up again with the same
   address and keep their data) and answers with the usual tokens – the material backend is unchanged.
 - Edit in `realms/make_realms.py` (`material_realm`, `MATERIAL_HOSTS`), run it, commit the generated files.
+
+## Realm `crm` – login of EspoCRM (since 2026-11-16)
+EspoCRM of the material library team at https://crm.neb-network.app (test: crm.test.neb-network.app, VPN). Own realm,
+**no sign-up**: accounts only from `realms/crm-users.json` – setup.sh creates missing ones on every start (no password:
+"Forgot password?" on the login page sends the link) and disables accounts that are no longer listed. Password ≥ 12
+characters, brute-force protection, German first.
+- Client `espocrm` (confidential, PKCE S256, redirect `<site>/oauth-callback.php`) from `realms/crm-<env>-client.json`;
+  secret = env `CRM_OIDC_SECRET` = generated cluster secret `crm-oidc` (NNA-deployment), the same value EspoCRM gets.
+- EspoCRM finds people by `preferred_username` (= username here) and lets in only users that exist there. The same
+  usernames are created as EspoCRM **admins** by NNA-deployment (service `crm`, `CRM_ADMINS`) – add/remove a person in
+  both places.
+- Edit in `realms/make_realms.py` (`crm_realm`, `crm_client`, `CRM_HOSTS`) / `crm-users.json`, run it, commit.

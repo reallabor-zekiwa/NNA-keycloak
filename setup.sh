@@ -330,4 +330,48 @@ if [ -f "$MAT_SETTINGS" ] && $KCADM get realms/material --fields realm >/dev/nul
 elif [ -f "$MAT_SETTINGS" ]; then
   echo "setup.sh: realm material missing – it is imported on the next start (start.sh)" >&2
 fi
+# 9. realm "crm" – login of EspoCRM (crm.neb-network.app, since 2026-11-16): no sign-up, accounts only from
+#    realms/crm-users.json (generated crm-users.tsv): missing ones are created without a password ("Forgot password?"
+#    on the login page), accounts no longer listed are disabled. Client "espocrm" (confidential, PKCE) from
+#    realms/crm-<env>-client.json; its secret = env CRM_OIDC_SECRET (generated cluster secret crm-oidc, the same
+#    value EspoCRM gets). Re-applied on every start.
+CRM_SETTINGS="/opt/nna/realms/crm-${ENV_NAME}-settings.json"
+CRM_CLIENT="/opt/nna/realms/crm-${ENV_NAME}-client.json"
+if [ -f "$CRM_SETTINGS" ] && $KCADM get realms/crm --fields realm >/dev/null 2>&1; then
+  $KCADM update realms/crm -f "$CRM_SETTINGS" && echo "setup.sh: crm realm settings applied"
+  smtp_password crm
+  if [ -f "$CRM_CLIENT" ] && [ -n "${CRM_OIDC_SECRET:-}" ]; then
+    CRM_SECRET="${CRM_OIDC_SECRET//[$'\r\n\t ']/}"
+    CID=$($KCADM get clients -r crm -q clientId=espocrm --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    if [ -z "$CID" ]; then
+      $KCADM create clients -r crm -f "$CRM_CLIENT" -s "secret=$CRM_SECRET" >/dev/null && echo "setup.sh: crm client espocrm created"
+    else
+      $KCADM update "clients/$CID" -r crm -f "$CRM_CLIENT" -s "secret=$CRM_SECRET" >/dev/null && echo "setup.sh: crm client espocrm updated"
+    fi
+  elif [ -f "$CRM_CLIENT" ]; then
+    echo "setup.sh: CRM_OIDC_SECRET not set – client espocrm not configured" >&2
+  fi
+  WANT=" "
+  while IFS=$'\t' read -r U EMAIL FIRST LAST; do
+    [ -n "$U" ] || continue
+    UID2=$($KCADM get users -r crm -q username="$U" -q exact=true --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    if [ -z "$UID2" ]; then
+      $KCADM create users -r crm -s username="$U" -s email="$EMAIL" -s firstName="$FIRST" -s lastName="$LAST" \
+        -s enabled=true -s emailVerified=true >/dev/null && echo "setup.sh: crm account $U created"
+      UID2=$($KCADM get users -r crm -q username="$U" -q exact=true --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    else
+      $KCADM update "users/$UID2" -r crm -s email="$EMAIL" -s firstName="$FIRST" -s lastName="$LAST" \
+        -s enabled=true -s emailVerified=true >/dev/null
+    fi
+    [ -n "$UID2" ] && WANT="$WANT$UID2 "
+  done < /opt/nna/realms/crm-users.tsv
+  # whoever is no longer in the list can no longer sign in (disabled, not deleted)
+  while IFS=, read -r M MU; do
+    [ -n "$M" ] || continue
+    case "$WANT" in *" $M "*) ;; *) $KCADM update "users/$M" -r crm -s enabled=false >/dev/null && echo "setup.sh: crm account $MU disabled" ;; esac
+  done < <($KCADM get users -r crm --fields id,username --format csv --noquotes 2>/dev/null)
+  echo "setup.sh: crm accounts in line with crm-users.json"
+elif [ -f "$CRM_SETTINGS" ]; then
+  echo "setup.sh: realm crm missing – it is imported on the next start (start.sh)" >&2
+fi
 echo "setup.sh: done"
