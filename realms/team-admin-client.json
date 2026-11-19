@@ -16,7 +16,9 @@
     "https://admin-siamak.dev.neb-network.app/*",
     "https://admin-vitalina.dev.neb-network.app/*",
     "https://admin-yigit.dev.neb-network.app/*",
-    "https://admin-hermann.dev.neb-network.app/*"
+    "https://admin-hermann.dev.neb-network.app/*",
+    "https://creator.neb-network.app/*",
+    "https://creator.test.neb-network.app/*"
   ],
   "webOrigins": [
     "https://admin.neb-network.app",
@@ -25,7 +27,9 @@
     "https://admin-siamak.dev.neb-network.app",
     "https://admin-vitalina.dev.neb-network.app",
     "https://admin-yigit.dev.neb-network.app",
-    "https://admin-hermann.dev.neb-network.app"
+    "https://admin-hermann.dev.neb-network.app",
+    "https://creator.neb-network.app",
+    "https://creator.test.neb-network.app"
   ],
   "attributes": {
     "pkce.code.challenge.method": "S256",

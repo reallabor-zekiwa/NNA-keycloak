@@ -142,10 +142,12 @@
       "directAccessGrantsEnabled": false,
       "implicitFlowEnabled": false,
       "redirectUris": [
-        "https://admin.neb-network.app/*"
+        "https://admin.neb-network.app/*",
+        "https://creator.neb-network.app/*"
       ],
       "webOrigins": [
-        "https://admin.neb-network.app"
+        "https://admin.neb-network.app",
+        "https://creator.neb-network.app"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",

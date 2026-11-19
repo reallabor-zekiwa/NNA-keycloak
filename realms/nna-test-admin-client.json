@@ -1,0 +1,34 @@
+{
+  "redirectUris": [
+    "https://admin.test.neb-network.app/*",
+    "https://creator.test.neb-network.app/*",
+    "https://admin-nigel.dev.neb-network.app/*",
+    "https://creator-nigel.dev.neb-network.app/*",
+    "https://admin-siamak.dev.neb-network.app/*",
+    "https://creator-siamak.dev.neb-network.app/*",
+    "https://admin-vitalina.dev.neb-network.app/*",
+    "https://creator-vitalina.dev.neb-network.app/*",
+    "https://admin-yigit.dev.neb-network.app/*",
+    "https://creator-yigit.dev.neb-network.app/*",
+    "https://admin-hermann.dev.neb-network.app/*",
+    "https://creator-hermann.dev.neb-network.app/*",
+    "http://localhost:3000/*",
+    "http://localhost:5173/*"
+  ],
+  "webOrigins": [
+    "https://admin.test.neb-network.app",
+    "https://creator.test.neb-network.app",
+    "https://admin-nigel.dev.neb-network.app",
+    "https://creator-nigel.dev.neb-network.app",
+    "https://admin-siamak.dev.neb-network.app",
+    "https://creator-siamak.dev.neb-network.app",
+    "https://admin-vitalina.dev.neb-network.app",
+    "https://creator-vitalina.dev.neb-network.app",
+    "https://admin-yigit.dev.neb-network.app",
+    "https://creator-yigit.dev.neb-network.app",
+    "https://admin-hermann.dev.neb-network.app",
+    "https://creator-hermann.dev.neb-network.app",
+    "http://localhost:3000",
+    "http://localhost:5173"
+  ]
+}
