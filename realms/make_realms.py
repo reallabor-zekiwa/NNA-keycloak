@@ -13,8 +13,9 @@ ENVS = {
         "kicker": "Welcome to · Test",
         "from": "noreply-test@neb-network.app",
         "smtp_user": "keycloak-test@neb-network.app",   # login at the mail service (password: env MAIL_SMTP_PASSWORD)
-        "apps": ["https://the.test.neb-network.app", "https://admin.test.neb-network.app", "https://test.neb-network.app"]
-                + [f"https://{a}-{p}.dev.neb-network.app" for p in PEOPLE for a in ("the", "admin")]
+        "apps": ["https://the.test.neb-network.app", "https://admin.test.neb-network.app", "https://test.neb-network.app",
+                 "https://creator.test.neb-network.app"]   # creator panel (2026-11-19): same admin-frontend, NEB account
+                + [f"https://{a}-{p}.dev.neb-network.app" for p in PEOPLE for a in ("the", "admin", "creator")]
                 + [f"https://{p}.dev.neb-network.app" for p in PEOPLE]
                 + ["http://localhost:3000", "http://localhost:5173"],
     },
@@ -24,7 +25,7 @@ ENVS = {
         "from": "noreply@neb-network.app",
         "smtp_user": "keycloak-prod@neb-network.app",
         "apps": ["https://the.neb-network.app", "https://admin.neb-network.app",
-                 "https://neb-network.app", "https://www.neb-network.app"],
+                 "https://neb-network.app", "https://www.neb-network.app", "https://creator.neb-network.app"],
     },
 }
 
@@ -89,7 +90,7 @@ def realm(env):
         ],
         "clients": [
             client("nna-webxr", "NEB Network App", [o for o in e["apps"] if "admin" not in o]),
-            client("nna-admin", "NEB Network Admin", [o for o in e["apps"] if "admin" in o or "localhost" in o]),
+            client("nna-admin", "NEB Network Admin", [o for o in e["apps"] if "admin" in o or "creator" in o or "localhost" in o]),
         ],
         "eventsEnabled": True, "eventsExpiration": 2592000, "adminEventsEnabled": True,
         "enabledEventTypes": ["LOGIN", "LOGIN_ERROR", "REGISTER", "REGISTER_ERROR", "DELETE_ACCOUNT",
@@ -151,7 +152,10 @@ def team_realm():
 # session. Created/updated by setup.sh on every start (the realm already exists, so an import would not add it).
 def team_admin_client():
     hosts = (["https://admin.neb-network.app", "https://admin.test.neb-network.app"]
-             + [f"https://admin-{p}.dev.neb-network.app" for p in PEOPLE])
+             + [f"https://admin-{p}.dev.neb-network.app" for p in PEOPLE]
+             # creator panel (2026-11-19): the same panel under creator.* – team members sign in there too
+             + ["https://creator.neb-network.app", "https://creator.test.neb-network.app"]
+             + [f"https://creator-{p}.dev.neb-network.app" for p in PEOPLE])
     return {
         "clientId": "nna-admin", "name": "NEB Network Admin (team login)", "enabled": True, "publicClient": True,
         "protocol": "openid-connect", "standardFlowEnabled": True, "directAccessGrantsEnabled": False,
@@ -380,6 +384,10 @@ if __name__ == "__main__":
         # settings applied on EVERY start by setup.sh (kcadm update realms/nna) – realm attributes only
         settings = {k: v for k, v in r.items() if k not in ("realm", "roles", "clients", "requiredActions", "defaultRole")}
         (here / f"nna-{env}-settings.json").write_text(json.dumps(settings, indent=2) + "\n")
+        # client nna-admin's hosts, merged into the existing realm by setup.sh (an import only runs once; creator panel)
+        adm = next(c for c in r["clients"] if c["clientId"] == "nna-admin")
+        (here / f"nna-{env}-admin-client.json").write_text(
+            json.dumps({"redirectUris": adm["redirectUris"], "webOrigins": adm["webOrigins"]}, indent=2) + "\n")
         print("wrote", here / f"nna-{env}.json", "+ settings")
     for env in ENVS:   # realm "material" (material library login)
         r = material_realm(env)

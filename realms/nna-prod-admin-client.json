@@ -1,0 +1,10 @@
+{
+  "redirectUris": [
+    "https://admin.neb-network.app/*",
+    "https://creator.neb-network.app/*"
+  ],
+  "webOrigins": [
+    "https://admin.neb-network.app",
+    "https://creator.neb-network.app"
+  ]
+}
