@@ -31,6 +31,15 @@ smtp_password() {   # $1 realm
 }
 smtp_password nna
 
+# 1c. client "nna-admin" of realm nna (since 2026-11-19, creator panel): creators sign in to the panel with their NEB
+#     account on admin.* and creator.* (realms/nna-<env>-admin-client.json: redirect URIs + web origins only, merged –
+#     the realm import ran only once, so new hosts must be applied here).
+NNA_ADMIN_CLIENT="/opt/nna/realms/nna-${ENV_NAME}-admin-client.json"
+if [ -f "$NNA_ADMIN_CLIENT" ]; then
+  CID=$($KCADM get clients -r nna -q clientId=nna-admin --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+  [ -n "$CID" ] && $KCADM update "clients/$CID" -r nna --merge -f "$NNA_ADMIN_CLIENT" >/dev/null \
+    && echo "setup.sh: nna client nna-admin redirect URIs applied"
+fi
 # 2. every new account may view/manage/delete itself (account client exists only after the realm was created)
 $KCADM add-roles -r nna --rname default-roles-nna --cclientid account \
   --rolename view-profile --rolename manage-account --rolename delete-account >/dev/null 2>&1 \
