@@ -18,7 +18,12 @@
     "https://admin-yigit.dev.neb-network.app/*",
     "https://admin-hermann.dev.neb-network.app/*",
     "https://creator.neb-network.app/*",
-    "https://creator.test.neb-network.app/*"
+    "https://creator.test.neb-network.app/*",
+    "https://creator-nigel.dev.neb-network.app/*",
+    "https://creator-siamak.dev.neb-network.app/*",
+    "https://creator-vitalina.dev.neb-network.app/*",
+    "https://creator-yigit.dev.neb-network.app/*",
+    "https://creator-hermann.dev.neb-network.app/*"
   ],
   "webOrigins": [
     "https://admin.neb-network.app",
@@ -29,7 +34,12 @@
     "https://admin-yigit.dev.neb-network.app",
     "https://admin-hermann.dev.neb-network.app",
     "https://creator.neb-network.app",
-    "https://creator.test.neb-network.app"
+    "https://creator.test.neb-network.app",
+    "https://creator-nigel.dev.neb-network.app",
+    "https://creator-siamak.dev.neb-network.app",
+    "https://creator-vitalina.dev.neb-network.app",
+    "https://creator-yigit.dev.neb-network.app",
+    "https://creator-hermann.dev.neb-network.app"
   ],
   "attributes": {
     "pkce.code.challenge.method": "S256",
