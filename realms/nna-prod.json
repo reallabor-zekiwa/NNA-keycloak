@@ -118,12 +118,14 @@
       "redirectUris": [
         "https://the.neb-network.app/*",
         "https://neb-network.app/*",
-        "https://www.neb-network.app/*"
+        "https://www.neb-network.app/*",
+        "https://creator.neb-network.app/*"
       ],
       "webOrigins": [
         "https://the.neb-network.app",
         "https://neb-network.app",
-        "https://www.neb-network.app"
+        "https://www.neb-network.app",
+        "https://creator.neb-network.app"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
