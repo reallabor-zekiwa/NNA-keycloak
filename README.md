@@ -74,3 +74,27 @@ characters, brute-force protection, German first.
   usernames are created as EspoCRM **admins** by NNA-deployment (service `crm`, `CRM_ADMINS`) – add/remove a person in
   both places.
 - Edit in `realms/make_realms.py` (`crm_realm`, `crm_client`, `CRM_HOSTS`) / `crm-users.json`, run it, commit.
+
+## Realm `verleih` – login of the Verleihschrank Zeitz (since 2026-11-19)
+Public tool-lending cabinet in Zeitz. Own realm like `material`: open sign-up with e-mail confirmation, forgot password,
+account deletion, brute-force protection, no Google/Apple, mails from the same noreply sender + mail login. Login page
+"Verleihschrank Zeitz" (test: "… (Test)"), theme `nna`.
+- **Sign-up asks for** first/last name, e-mail, birthday (`birthday`, date), `street`, `postalCode`, `city`, `phone` – all
+  required (declarative user profile `realms/verleih-profile.json`, applied by setup.sh on every start). No minimum age.
+- **Roles:** `User` (default), `Verified` (ID checked in person – only the app backend grants it), `Verifier`, `Admin`.
+  All realm roles are in the token: `realm_access.roles` (access token) and the flat claim `roles` (access + ID token,
+  userinfo) of client `verleihschrank`.
+- Client `verleihschrank` (public, PKCE S256) for verleihschrank.neb-network.app (prod) and verleihschrank.test… +
+  verleihschrank-<name>.dev… + localhost:3000 (test), from `realms/verleih-<env>-client.json`.
+- Client `verleihschrank-backend` (confidential, service account only, `realms/verleih-backend-client.json`): reads users
+  and grants/revokes `Verified`/`Verifier` (realm-management `view-users` + `manage-users`). Secret = env
+  `VERLEIH_BACKEND_SECRET` – **an admin creates it** as a cluster secret (NNA-deployment: the same value for Keycloak and
+  the Verleihschrank backend), never in git. Without it setup.sh skips the client.
+- Created on the first start with this image (`verleih-<env>.json`, start.sh); settings, mail login, account roles,
+  password-on-sign-up, roles, user profile and both clients are re-applied by setup.sh on every start.
+- **Open (follow-up):** users can still edit name, birthday and address in the account console after verification –
+  Keycloak's user profile cannot lock fields by role/status. The backend should listen for `UPDATE_PROFILE` events
+  (enabled) and revoke `Verified` on changes, or we move those fields to admin-only edit once a custom form exists.
+  `manage-users` would technically allow mapping any realm role (also `Admin`) – the backend must only touch
+  `Verified`/`Verifier` (narrower only with fine-grained admin permissions).
+- Edit in `realms/make_realms.py` (`verleih_realm`, `verleih_profile`, `VERLEIH_HOSTS`), run it, commit the generated files.

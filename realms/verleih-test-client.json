@@ -1,0 +1,49 @@
+{
+  "clientId": "verleihschrank",
+  "name": "Verleihschrank Zeitz (Test)",
+  "enabled": true,
+  "publicClient": true,
+  "protocol": "openid-connect",
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "implicitFlowEnabled": false,
+  "redirectUris": [
+    "https://verleihschrank.test.neb-network.app/*",
+    "https://verleihschrank-nigel.dev.neb-network.app/*",
+    "https://verleihschrank-siamak.dev.neb-network.app/*",
+    "https://verleihschrank-vitalina.dev.neb-network.app/*",
+    "https://verleihschrank-yigit.dev.neb-network.app/*",
+    "https://verleihschrank-hermann.dev.neb-network.app/*",
+    "http://localhost:3000/*"
+  ],
+  "webOrigins": [
+    "https://verleihschrank.test.neb-network.app",
+    "https://verleihschrank-nigel.dev.neb-network.app",
+    "https://verleihschrank-siamak.dev.neb-network.app",
+    "https://verleihschrank-vitalina.dev.neb-network.app",
+    "https://verleihschrank-yigit.dev.neb-network.app",
+    "https://verleihschrank-hermann.dev.neb-network.app",
+    "http://localhost:3000"
+  ],
+  "attributes": {
+    "pkce.code.challenge.method": "S256",
+    "post.logout.redirect.uris": "+"
+  },
+  "frontchannelLogout": true,
+  "fullScopeAllowed": true,
+  "protocolMappers": [
+    {
+      "name": "realm-roles",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-realm-role-mapper",
+      "config": {
+        "claim.name": "roles",
+        "multivalued": "true",
+        "jsonType.label": "String",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "userinfo.token.claim": "true"
+      }
+    }
+  ]
+}

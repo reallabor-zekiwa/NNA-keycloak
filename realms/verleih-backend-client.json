@@ -1,0 +1,29 @@
+{
+  "clientId": "verleihschrank-backend",
+  "name": "Verleihschrank backend (service account)",
+  "enabled": true,
+  "publicClient": false,
+  "clientAuthenticatorType": "client-secret",
+  "protocol": "openid-connect",
+  "standardFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "implicitFlowEnabled": false,
+  "serviceAccountsEnabled": true,
+  "consentRequired": false,
+  "redirectUris": [],
+  "webOrigins": [],
+  "frontchannelLogout": false,
+  "fullScopeAllowed": false,
+  "protocolMappers": [
+    {
+      "name": "realm-management-audience",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-audience-mapper",
+      "config": {
+        "included.client.audience": "realm-management",
+        "access.token.claim": "true",
+        "id.token.claim": "false"
+      }
+    }
+  ]
+}

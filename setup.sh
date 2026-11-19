@@ -374,4 +374,69 @@ if [ -f "$CRM_SETTINGS" ] && $KCADM get realms/crm --fields realm >/dev/null 2>&
 elif [ -f "$CRM_SETTINGS" ]; then
   echo "setup.sh: realm crm missing – it is imported on the next start (start.sh)" >&2
 fi
+# 10. realm "verleih" – login of the Verleihschrank Zeitz (since 2026-11-19), like "material": sign-up with e-mail
+#     confirmation, reset, account deletion; no Google/Apple. User profile (birthday, address, phone required at
+#     sign-up) from realms/verleih-profile.json. Client "verleihschrank" (public, PKCE) from
+#     realms/verleih-<env>-client.json. Service client "verleihschrank-backend" (realms/verleih-backend-client.json):
+#     secret = env VERLEIH_BACKEND_SECRET (cluster secret, created by an admin, never in git) – read users and
+#     grant/revoke the roles Verified/Verifier. All re-applied on every start.
+VL_SETTINGS="/opt/nna/realms/verleih-${ENV_NAME}-settings.json"
+VL_CLIENT="/opt/nna/realms/verleih-${ENV_NAME}-client.json"
+VL_BACKEND="/opt/nna/realms/verleih-backend-client.json"
+VL_PROFILE="/opt/nna/realms/verleih-profile.json"
+if [ -f "$VL_SETTINGS" ] && $KCADM get realms/verleih --fields realm >/dev/null 2>&1; then
+  $KCADM update realms/verleih -f "$VL_SETTINGS" && echo "setup.sh: verleih realm settings applied"
+  smtp_password verleih
+  $KCADM add-roles -r verleih --rname default-roles-verleih --cclientid account \
+    --rolename view-profile --rolename manage-account --rolename delete-account >/dev/null 2>&1 \
+    && echo "setup.sh: verleih default roles incl. delete-account"
+  password_on_signup verleih
+  # roles (the realm may predate one – import only runs once)
+  for R in User Verified Verifier Admin; do
+    $KCADM get "roles/$R" -r verleih >/dev/null 2>&1 || { $KCADM create roles -r verleih -s name="$R" >/dev/null \
+      && echo "setup.sh: verleih role $R created"; }
+  done
+  if [ -f "$VL_PROFILE" ]; then
+    $KCADM update users/profile -r verleih -f "$VL_PROFILE" >/dev/null && echo "setup.sh: verleih user profile applied"
+  fi
+  if [ -f "$VL_CLIENT" ]; then
+    CID=$($KCADM get clients -r verleih -q clientId=verleihschrank --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    if [ -z "$CID" ]; then
+      $KCADM create clients -r verleih -f "$VL_CLIENT" >/dev/null && echo "setup.sh: verleih client created"
+    else
+      $KCADM update "clients/$CID" -r verleih -f "$VL_CLIENT" >/dev/null && echo "setup.sh: verleih client updated"
+    fi
+  fi
+  if [ -f "$VL_BACKEND" ] && [ -n "${VERLEIH_BACKEND_SECRET:-}" ]; then
+    VL_SECRET="${VERLEIH_BACKEND_SECRET//[$'\r\n\t ']/}"
+    CID=$($KCADM get clients -r verleih -q clientId=verleihschrank-backend --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    if [ -z "$CID" ]; then
+      $KCADM create clients -r verleih -f "$VL_BACKEND" -s "secret=$VL_SECRET" >/dev/null && echo "setup.sh: verleih backend client created"
+      CID=$($KCADM get clients -r verleih -q clientId=verleihschrank-backend --fields id --format csv --noquotes 2>/dev/null | head -n 1)
+    else
+      $KCADM update "clients/$CID" -r verleih -f "$VL_BACKEND" -s "secret=$VL_SECRET" >/dev/null && echo "setup.sh: verleih backend client updated"
+    fi
+    # Keycloak 26.6+: admin API tokens need the scope "kc-admin-api" with the admin-API audience (as for nna-backend)
+    SID=$($KCADM get client-scopes -r verleih --fields id,name --format csv --noquotes 2>/dev/null | grep ',kc-admin-api$' | cut -d, -f1)
+    if [ -z "$SID" ]; then
+      $KCADM create client-scopes -r verleih -s name=kc-admin-api -s protocol=openid-connect \
+        -s 'attributes."include.in.token.scope"=true' -s 'attributes."display.on.consent.screen"=false' >/dev/null
+      SID=$($KCADM get client-scopes -r verleih --fields id,name --format csv --noquotes 2>/dev/null | grep ',kc-admin-api$' | cut -d, -f1)
+    fi
+    if [ -n "$SID" ] && ! $KCADM get "client-scopes/$SID/protocol-mappers/models" -r verleih --fields name --format csv --noquotes 2>/dev/null | grep -q '^admin-api-audience$'; then
+      $KCADM create "client-scopes/$SID/protocol-mappers/models" -r verleih -s name=admin-api-audience -s protocol=openid-connect \
+        -s protocolMapper=oidc-admin-api-audience-mapper -s 'config."access.token.claim"=true' >/dev/null
+    fi
+    [ -n "$CID" ] && [ -n "$SID" ] && $KCADM update "clients/$CID/default-client-scopes/$SID" -r verleih >/dev/null 2>&1 \
+      && echo "setup.sh: kc-admin-api scope on verleihschrank-backend"
+    # read users + change their role mappings (needed to grant/revoke Verified/Verifier). Keycloak has no narrower
+    # built-in role for "map only these realm roles" – the backend must only ever touch Verified and Verifier.
+    $KCADM add-roles -r verleih --uusername service-account-verleihschrank-backend --cclientid realm-management \
+      --rolename view-users --rolename manage-users >/dev/null && echo "setup.sh: verleih backend service account ready"
+  elif [ -f "$VL_BACKEND" ]; then
+    echo "setup.sh: VERLEIH_BACKEND_SECRET not set – client verleihschrank-backend not configured" >&2
+  fi
+elif [ -f "$VL_SETTINGS" ]; then
+  echo "setup.sh: realm verleih missing – it is imported on the next start (start.sh)" >&2
+fi
 echo "setup.sh: done"

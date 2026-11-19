@@ -21,6 +21,9 @@ if [ -f "$MAT" ]; then printf '%s' "$(<"$MAT")" > /opt/keycloak/data/import/mate
 # realm "crm" (EspoCRM login, since 2026-11-16) – imported once, then kept in line by setup.sh
 CRM="/opt/nna/realms/crm-${ENV_NAME}.json"
 if [ -f "$CRM" ]; then printf '%s' "$(<"$CRM")" > /opt/keycloak/data/import/crm.json; fi
+# realm "verleih" (Verleihschrank Zeitz login, since 2026-11-19) – imported once, then kept in line by setup.sh
+VERLEIH="/opt/nna/realms/verleih-${ENV_NAME}.json"
+if [ -f "$VERLEIH" ]; then printf '%s' "$(<"$VERLEIH")" > /opt/keycloak/data/import/verleih.json; fi
 
 /opt/keycloak/bin/kc.sh start --optimized --import-realm "$@" &
 KC=$!

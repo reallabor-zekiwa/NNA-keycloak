@@ -1,0 +1,264 @@
+{
+  "attributes": [
+    {
+      "name": "username",
+      "displayName": "${username}",
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false,
+      "validations": {
+        "length": {
+          "min": 3,
+          "max": 255
+        },
+        "username-prohibited-characters": {},
+        "up-username-not-idn-homograph": {}
+      }
+    },
+    {
+      "name": "email",
+      "displayName": "${email}",
+      "validations": {
+        "email": {},
+        "length": {
+          "max": 255
+        }
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "firstName",
+      "displayName": "${firstName}",
+      "validations": {
+        "length": {
+          "max": 255
+        },
+        "person-name-prohibited-characters": {}
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "lastName",
+      "displayName": "${lastName}",
+      "validations": {
+        "length": {
+          "max": 255
+        },
+        "person-name-prohibited-characters": {}
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "birthday",
+      "displayName": "Geburtsdatum",
+      "validations": {
+        "local-date": {}
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false,
+      "annotations": {
+        "inputType": "html5-date",
+        "autocomplete": "bday"
+      }
+    },
+    {
+      "name": "street",
+      "displayName": "Stra\u00dfe und Hausnummer",
+      "validations": {
+        "length": {
+          "min": 3,
+          "max": 120
+        }
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false,
+      "annotations": {
+        "autocomplete": "street-address"
+      },
+      "group": "address"
+    },
+    {
+      "name": "postalCode",
+      "displayName": "Postleitzahl",
+      "validations": {
+        "pattern": {
+          "pattern": "^[0-9A-Za-z -]{3,10}$",
+          "error-message": "Bitte eine g\u00fcltige Postleitzahl eingeben."
+        }
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false,
+      "annotations": {
+        "autocomplete": "postal-code"
+      },
+      "group": "address"
+    },
+    {
+      "name": "city",
+      "displayName": "Ort",
+      "validations": {
+        "length": {
+          "min": 2,
+          "max": 80
+        }
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false,
+      "annotations": {
+        "autocomplete": "address-level2"
+      },
+      "group": "address"
+    },
+    {
+      "name": "phone",
+      "displayName": "Telefon",
+      "validations": {
+        "pattern": {
+          "pattern": "^\\+?[0-9 ()/-]{6,25}$",
+          "error-message": "Bitte eine g\u00fcltige Telefonnummer eingeben."
+        }
+      },
+      "required": {
+        "roles": [
+          "user"
+        ]
+      },
+      "permissions": {
+        "view": [
+          "admin",
+          "user"
+        ],
+        "edit": [
+          "admin",
+          "user"
+        ]
+      },
+      "multivalued": false,
+      "annotations": {
+        "inputType": "html5-tel",
+        "autocomplete": "tel"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "user-metadata",
+      "displayHeader": "User metadata",
+      "displayDescription": "Attributes, which refer to user metadata"
+    },
+    {
+      "name": "address",
+      "displayHeader": "Adresse"
+    }
+  ],
+  "unmanagedAttributePolicy": "ADMIN_EDIT"
+}

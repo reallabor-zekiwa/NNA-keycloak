@@ -255,6 +255,123 @@ def crm_client(env):
     }
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# Realm "verleih" (since 2026-11-19): the login of the Verleihschrank Zeitz (public tool-lending cabinet). Its OWN realm
+# like "material": open sign-up with e-mail confirmation, reset, account deletion, brute-force protection, no
+# Google/Apple. Sign-up asks for name, birthday, address and phone (declarative user profile, verleih-profile.json,
+# re-applied by setup.sh). Roles: User (default), Verified (only the app backend grants it, after an in-person ID
+# check), Verifier (may do that check), Admin – all realm roles go into the token (realm_access.roles + flat "roles").
+# Client "verleihschrank" (public, PKCE) for the app; client "verleihschrank-backend" (confidential, service account
+# only) lets the app backend read users and grant/revoke Verified/Verifier – secret = env VERLEIH_BACKEND_SECRET.
+VERLEIH_HOSTS = {
+    "test": ["https://verleihschrank.test.neb-network.app"]
+            + [f"https://verleihschrank-{p}.dev.neb-network.app" for p in PEOPLE]
+            + ["http://localhost:3000"],
+    "prod": ["https://verleihschrank.neb-network.app"],
+}
+VERLEIH_ROLES = [   # realm roles besides the default role
+    {"name": "User", "description": "Verleihschrank account (everyone)"},
+    {"name": "Verified", "description": "ID checked in person – granted/revoked only by the app backend"},
+    {"name": "Verifier", "description": "May check IDs and verify accounts (through the app)"},
+    {"name": "Admin", "description": "Verleihschrank admin"},
+]
+
+
+def verleih_client(env):
+    name = "Verleihschrank Zeitz" + (" (Test)" if env == "test" else "")
+    c = client("verleihschrank", name, VERLEIH_HOSTS[env])
+    # all realm roles of the user as a flat list "roles" in access + ID token + userinfo (realm_access.roles in the
+    # access token comes from Keycloak's default scope "roles" anyway)
+    c["protocolMappers"] = [{
+        "name": "realm-roles", "protocol": "openid-connect", "protocolMapper": "oidc-usermodel-realm-role-mapper",
+        "config": {"claim.name": "roles", "multivalued": "true", "jsonType.label": "String",
+                   "id.token.claim": "true", "access.token.claim": "true", "userinfo.token.claim": "true"}}]
+    return c
+
+
+def verleih_backend_client():
+    # no secret here: setup.sh sets it from env VERLEIH_BACKEND_SECRET (cluster secret, created by an admin)
+    return {
+        "clientId": "verleihschrank-backend", "name": "Verleihschrank backend (service account)", "enabled": True,
+        "publicClient": False, "clientAuthenticatorType": "client-secret", "protocol": "openid-connect",
+        "standardFlowEnabled": False, "directAccessGrantsEnabled": False, "implicitFlowEnabled": False,
+        "serviceAccountsEnabled": True, "consentRequired": False, "redirectUris": [], "webOrigins": [],
+        "frontchannelLogout": False, "fullScopeAllowed": False,
+        # the admin API only accepts tokens with audience "realm-management"
+        "protocolMappers": [{
+            "name": "realm-management-audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper",
+            "config": {"included.client.audience": "realm-management", "access.token.claim": "true",
+                       "id.token.claim": "false"}}],
+    }
+
+
+def verleih_profile():
+    """Keycloak 26 declarative user profile (PUT users/profile). Everything required at sign-up; users may edit all of
+    it in the account console (Keycloak cannot lock fields per role/status – see README follow-up)."""
+    both = {"view": ["admin", "user"], "edit": ["admin", "user"]}
+    req = {"roles": ["user"]}   # required for the user (sign-up, update profile); admins may save incomplete accounts
+
+    def attr(name, label, validations, annotations=None, group=None):
+        a = {"name": name, "displayName": label, "validations": validations, "required": req,
+             "permissions": both, "multivalued": False}
+        if annotations:
+            a["annotations"] = annotations
+        if group:
+            a["group"] = group
+        return a
+
+    return {
+        "attributes": [
+            {"name": "username", "displayName": "${username}", "permissions": both, "multivalued": False,
+             "validations": {"length": {"min": 3, "max": 255}, "username-prohibited-characters": {},
+                             "up-username-not-idn-homograph": {}}},
+            attr("email", "${email}", {"email": {}, "length": {"max": 255}}),
+            attr("firstName", "${firstName}", {"length": {"max": 255}, "person-name-prohibited-characters": {}}),
+            attr("lastName", "${lastName}", {"length": {"max": 255}, "person-name-prohibited-characters": {}}),
+            attr("birthday", "Geburtsdatum", {"local-date": {}},
+                 {"inputType": "html5-date", "autocomplete": "bday"}),
+            attr("street", "Straße und Hausnummer", {"length": {"min": 3, "max": 120}},
+                 {"autocomplete": "street-address"}, "address"),
+            attr("postalCode", "Postleitzahl", {"pattern": {"pattern": "^[0-9A-Za-z -]{3,10}$",
+                                                            "error-message": "Bitte eine gültige Postleitzahl eingeben."}},
+                 {"autocomplete": "postal-code"}, "address"),
+            attr("city", "Ort", {"length": {"min": 2, "max": 80}}, {"autocomplete": "address-level2"}, "address"),
+            attr("phone", "Telefon", {"pattern": {"pattern": "^\\+?[0-9 ()/-]{6,25}$",
+                                                  "error-message": "Bitte eine gültige Telefonnummer eingeben."}},
+                 {"inputType": "html5-tel", "autocomplete": "tel"}),
+        ],
+        "groups": [
+            {"name": "user-metadata", "displayHeader": "User metadata",
+             "displayDescription": "Attributes, which refer to user metadata"},
+            {"name": "address", "displayHeader": "Adresse"},
+        ],
+        # extra attributes (e.g. when/by whom verified) may be stored by admins / the backend, invisible to users
+        "unmanagedAttributePolicy": "ADMIN_EDIT",
+    }
+
+
+def verleih_realm(env):
+    e = ENVS[env]
+    name = "Verleihschrank Zeitz" + (" (Test)" if env == "test" else "")
+    r = realm(env)
+    r.update({
+        "realm": "verleih", "displayName": name,
+        "displayNameHtml": '<span class="nna-kicker">' + ("Test · " if env == "test" else "") + 'NEB Network</span>Verleihschrank Zeitz',
+        "smtpServer": smtp(e, name),
+        "roles": {"realm": VERLEIH_ROLES + [
+            {"name": "offline_access", "description": "${role_offline-access}"},
+            {"name": "uma_authorization", "description": "${role_uma_authorization}"},
+            {"name": "default-roles-verleih", "composite": True, "composites": {
+                "realm": ["User", "offline_access", "uma_authorization"]}},
+        ]},
+        "defaultRole": {"name": "default-roles-verleih", "composite": True},
+        "clients": [verleih_client(env)],
+    })
+    r["enabledEventTypes"] = [t for t in r["enabledEventTypes"] if t != "IDENTITY_PROVIDER_LOGIN"] + [
+        "UPDATE_PROFILE", "UPDATE_EMAIL"]
+    return r
+
+
 if __name__ == "__main__":
     here = Path(__file__).parent
     for env in ENVS:
@@ -272,6 +389,16 @@ if __name__ == "__main__":
         # the client is re-applied by setup.sh too (an import only runs once; new hosts must reach existing realms)
         (here / f"material-{env}-client.json").write_text(json.dumps(r["clients"][0], indent=2) + "\n")
         print("wrote", here / f"material-{env}.json", "+ settings + client")
+    for env in ENVS:   # realm "verleih" (Verleihschrank Zeitz login)
+        r = verleih_realm(env)
+        (here / f"verleih-{env}.json").write_text(json.dumps(r, indent=2) + "\n")
+        settings = {k: v for k, v in r.items() if k not in ("realm", "roles", "clients", "requiredActions", "defaultRole")}
+        (here / f"verleih-{env}-settings.json").write_text(json.dumps(settings, indent=2) + "\n")
+        (here / f"verleih-{env}-client.json").write_text(json.dumps(r["clients"][0], indent=2) + "\n")
+        print("wrote", here / f"verleih-{env}.json", "+ settings + client")
+    (here / "verleih-backend-client.json").write_text(json.dumps(verleih_backend_client(), indent=2) + "\n")
+    (here / "verleih-profile.json").write_text(json.dumps(verleih_profile(), indent=2) + "\n")
+    print("wrote", here / "verleih-backend-client.json", "+ verleih-profile.json")
     for env in ENVS:   # realm "crm" (EspoCRM login)
         r = crm_realm(env)
         (here / f"crm-{env}.json").write_text(json.dumps(r, indent=2) + "\n")

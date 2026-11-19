@@ -1,0 +1,182 @@
+{
+  "realm": "verleih",
+  "enabled": true,
+  "displayName": "Verleihschrank Zeitz (Test)",
+  "displayNameHtml": "<span class=\"nna-kicker\">Test \u00b7 NEB Network</span>Verleihschrank Zeitz",
+  "loginTheme": "nna",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "permanentLockout": false,
+  "passwordPolicy": "length(8) and notUsername and notEmail",
+  "sslRequired": "external",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de",
+    "en"
+  ],
+  "defaultLocale": "de",
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 7776000,
+  "offlineSessionIdleTimeout": 7776000,
+  "smtpServer": {
+    "host": "mail.nna-prod.svc.cluster.local",
+    "port": "587",
+    "from": "noreply-test@neb-network.app",
+    "fromDisplayName": "Verleihschrank Zeitz (Test)",
+    "replyTo": "",
+    "auth": "true",
+    "user": "keycloak-test@neb-network.app",
+    "ssl": "false",
+    "starttls": "false"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "User",
+        "description": "Verleihschrank account (everyone)"
+      },
+      {
+        "name": "Verified",
+        "description": "ID checked in person \u2013 granted/revoked only by the app backend"
+      },
+      {
+        "name": "Verifier",
+        "description": "May check IDs and verify accounts (through the app)"
+      },
+      {
+        "name": "Admin",
+        "description": "Verleihschrank admin"
+      },
+      {
+        "name": "offline_access",
+        "description": "${role_offline-access}"
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma_authorization}"
+      },
+      {
+        "name": "default-roles-verleih",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "User",
+            "offline_access",
+            "uma_authorization"
+          ]
+        }
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-verleih",
+    "composite": true
+  },
+  "requiredActions": [
+    {
+      "alias": "delete_account",
+      "name": "Delete Account",
+      "providerId": "delete_account",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 60,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "verleihschrank",
+      "name": "Verleihschrank Zeitz (Test)",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "https://verleihschrank.test.neb-network.app/*",
+        "https://verleihschrank-nigel.dev.neb-network.app/*",
+        "https://verleihschrank-siamak.dev.neb-network.app/*",
+        "https://verleihschrank-vitalina.dev.neb-network.app/*",
+        "https://verleihschrank-yigit.dev.neb-network.app/*",
+        "https://verleihschrank-hermann.dev.neb-network.app/*",
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "https://verleihschrank.test.neb-network.app",
+        "https://verleihschrank-nigel.dev.neb-network.app",
+        "https://verleihschrank-siamak.dev.neb-network.app",
+        "https://verleihschrank-vitalina.dev.neb-network.app",
+        "https://verleihschrank-yigit.dev.neb-network.app",
+        "https://verleihschrank-hermann.dev.neb-network.app",
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "frontchannelLogout": true,
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "roles",
+            "multivalued": "true",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "eventsEnabled": true,
+  "eventsExpiration": 2592000,
+  "adminEventsEnabled": true,
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "REGISTER",
+    "REGISTER_ERROR",
+    "DELETE_ACCOUNT",
+    "VERIFY_EMAIL",
+    "SEND_RESET_PASSWORD",
+    "UPDATE_PASSWORD",
+    "UPDATE_PROFILE",
+    "UPDATE_EMAIL"
+  ]
+}
