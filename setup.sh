@@ -414,6 +414,21 @@ if [ -f "$VL_SETTINGS" ] && $KCADM get realms/verleih --fields realm >/dev/null 
       $KCADM create clients -r verleih -f "$VL_CLIENT" >/dev/null && echo "setup.sh: verleih client created"
     else
       $KCADM update "clients/$CID" -r verleih -f "$VL_CLIENT" >/dev/null && echo "setup.sh: verleih client updated"
+      # a client update leaves its mappers alone: keep the token claims (roles, birthday, street, postalCode, city,
+      # phone) in line with realms/verleih-mapper-<name>.json – create missing ones, update existing ones
+      for MF in /opt/nna/realms/verleih-mapper-*.json; do
+        [ -f "$MF" ] || continue
+        MN="${MF##*/verleih-mapper-}"; MN="${MN%.json}"
+        MID=""
+        while IFS=, read -r ID NM; do [ "$NM" = "$MN" ] && MID="$ID"; done \
+          < <($KCADM get "clients/$CID/protocol-mappers/models" -r verleih --fields id,name --format csv --noquotes 2>/dev/null)
+        if [ -z "$MID" ]; then
+          $KCADM create "clients/$CID/protocol-mappers/models" -r verleih -f "$MF" >/dev/null && echo "setup.sh: verleih mapper $MN added"
+        else
+          $KCADM update "clients/$CID/protocol-mappers/models/$MID" -r verleih -f "$MF" -s "id=$MID" >/dev/null \
+            || echo "setup.sh: verleih mapper $MN not updated" >&2
+        fi
+      done
     fi
   fi
   if [ -f "$VL_BACKEND" ] && [ -n "${VERLEIH_BACKEND_SECRET:-}" ]; then

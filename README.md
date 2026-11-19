@@ -83,7 +83,8 @@ account deletion, brute-force protection, no Google/Apple, mails from the same n
   required (declarative user profile `realms/verleih-profile.json`, applied by setup.sh on every start). No minimum age.
 - **Roles:** `User` (default), `Verified` (ID checked in person – only the app backend grants it), `Verifier`, `Admin`.
   All realm roles are in the token: `realm_access.roles` (access token) and the flat claim `roles` (access + ID token,
-  userinfo) of client `verleihschrank`.
+  userinfo) of client `verleihschrank`. The same client also puts `birthday`, `street`, `postalCode`, `city`, `phone`
+  into ID/access token and userinfo (mappers `realms/verleih-mapper-*.json`, kept in sync by setup.sh).
 - Client `verleihschrank` (public, PKCE S256) for verleihschrank.neb-network.app (prod) and verleihschrank.test… +
   verleihschrank-<name>.dev… + localhost:3000 (test), from `realms/verleih-<env>-client.json`.
 - Client `verleihschrank-backend` (confidential, service account only, `realms/verleih-backend-client.json`): reads users

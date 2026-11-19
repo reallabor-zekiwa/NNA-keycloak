@@ -286,11 +286,25 @@ def verleih_client(env):
     c = client("verleihschrank", name, VERLEIH_HOSTS[env])
     # all realm roles of the user as a flat list "roles" in access + ID token + userinfo (realm_access.roles in the
     # access token comes from Keycloak's default scope "roles" anyway)
-    c["protocolMappers"] = [{
-        "name": "realm-roles", "protocol": "openid-connect", "protocolMapper": "oidc-usermodel-realm-role-mapper",
-        "config": {"claim.name": "roles", "multivalued": "true", "jsonType.label": "String",
-                   "id.token.claim": "true", "access.token.claim": "true", "userinfo.token.claim": "true"}}]
+    c["protocolMappers"] = verleih_mappers()
     return c
+
+
+VERLEIH_PROFILE_CLAIMS = ["birthday", "street", "postalCode", "city", "phone"]   # user-profile attribute = claim name
+
+
+def verleih_mappers():
+    """Protocol mappers of client "verleihschrank": realm roles (flat "roles") + the profile attributes the app needs.
+    Also written one per file (verleih-mapper-<name>.json) – setup.sh creates missing ones and updates existing ones,
+    because updating a client does not touch its mappers."""
+    tokens = {"id.token.claim": "true", "access.token.claim": "true", "userinfo.token.claim": "true"}
+    ms = [{"name": "realm-roles", "protocol": "openid-connect", "protocolMapper": "oidc-usermodel-realm-role-mapper",
+           "config": {"claim.name": "roles", "multivalued": "true", "jsonType.label": "String", **tokens}}]
+    for a in VERLEIH_PROFILE_CLAIMS:
+        ms.append({"name": a, "protocol": "openid-connect", "protocolMapper": "oidc-usermodel-attribute-mapper",
+                   "config": {"user.attribute": a, "claim.name": a, "jsonType.label": "String",
+                              "multivalued": "false", "aggregate.attrs": "false", **tokens}})
+    return ms
 
 
 def verleih_backend_client():
@@ -404,6 +418,8 @@ if __name__ == "__main__":
         (here / f"verleih-{env}-settings.json").write_text(json.dumps(settings, indent=2) + "\n")
         (here / f"verleih-{env}-client.json").write_text(json.dumps(r["clients"][0], indent=2) + "\n")
         print("wrote", here / f"verleih-{env}.json", "+ settings + client")
+    for m in verleih_mappers():   # one file per mapper (setup.sh keeps them in sync on existing clients)
+        (here / f"verleih-mapper-{m['name']}.json").write_text(json.dumps(m, indent=2) + "\n")
     (here / "verleih-backend-client.json").write_text(json.dumps(verleih_backend_client(), indent=2) + "\n")
     (here / "verleih-profile.json").write_text(json.dumps(verleih_profile(), indent=2) + "\n")
     print("wrote", here / "verleih-backend-client.json", "+ verleih-profile.json")

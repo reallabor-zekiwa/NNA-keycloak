@@ -1,0 +1,15 @@
+{
+  "name": "birthday",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-usermodel-attribute-mapper",
+  "config": {
+    "user.attribute": "birthday",
+    "claim.name": "birthday",
+    "jsonType.label": "String",
+    "multivalued": "false",
+    "aggregate.attrs": "false",
+    "id.token.claim": "true",
+    "access.token.claim": "true",
+    "userinfo.token.claim": "true"
+  }
+}
